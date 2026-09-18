@@ -10,7 +10,9 @@ _frontend
 *.swp
 *.swo
 *~
-
+keys
+assets
+*.zip
 # Root secrets
 /.env
 /.env.local
