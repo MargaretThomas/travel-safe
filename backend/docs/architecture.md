@@ -23,6 +23,11 @@ Update this table first whenever an endpoint changes so the frontend team has a 
 | `/api/v1/stats` | GET | `area_code` | Precinct-level reported-crime statistics + caveats |
 | `/api/v1/heatmap` | GET | `bbox=west,south,east,north&zoom=5..18` | Aggregate map cells; never fabricated incident pins |
 | `/api/v1/areas/{area_code}/safety` | GET | Path area code | Confidence-aware signal; may return `insufficient_data` |
+| `/api/v1/halo` | GET | Optional `q`, optional `bbox` | Public Halo list + community visitability aggregates |
+| `/api/v1/halo` | POST | `X-Client-ID` + Halo body | Create one community Halo |
+| `/api/v1/halo/{halo_id}` | GET | Path Halo ID | Halo detail + community aggregates |
+| `/api/v1/halo/{halo_id}/rating` | PUT | `X-Client-ID` + 1–5 rating/like/visit | Idempotent per-client Halo rating |
+| `/api/v1/halo/{halo_id}/rating-settings` | PUT | submitter `X-Client-ID` + enabled flag | Demo-only rating enable/disable |
 
 ## MVP data behavior
 
