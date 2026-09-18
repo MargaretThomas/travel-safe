@@ -51,7 +51,7 @@ export function SafetyMap({ style, liveLocation }: SafetyMapProps) {
 
     lastCenteredRef.current = liveLocation;
     mapRef.current?.setCameraPosition?.({
-      coordinates: { latitude: liveLocation.latitude, longitude: liveLocation.longitude },
+      // coordinates: { latitude: liveLocation.latitude, longitude: liveLocation.longitude },
       zoom: LIVE_LOCATION_ZOOM,
     });
   }, [liveLocation]);
@@ -116,7 +116,12 @@ export function SafetyMap({ style, liveLocation }: SafetyMapProps) {
           colorScheme={GoogleMaps.MapColorScheme.FOLLOW_SYSTEM}
         />
       )}
-      <SafetyLegend />
+      {
+        /*
+        <SafetyLegend />
+        */
+      }
+
     </View>
   );
 }

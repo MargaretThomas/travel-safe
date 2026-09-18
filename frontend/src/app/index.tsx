@@ -13,22 +13,27 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <SafetyMap liveLocation={position} />
-      <ThemedView testID="safety-map-header" type="backgroundElement" style={styles.header}>
-        <ThemedText type="title">{strings.safetyMap.headerTitle}</ThemedText>
-        <ThemedText themeColor="textSecondary">{strings.safetyMap.headerSubtitle}</ThemedText>
-        {isLocating && (
-          <ThemedText testID="safety-map-location-status" type="small" themeColor="textSecondary">
-            {strings.safetyMap.locating}
-          </ThemedText>
-        )}
-        {error && (
-          <Pressable testID="safety-map-location-retry" onPress={retry}>
-            <ThemedText type="small" style={styles.retryText}>
-              {strings.safetyMap.locationUnavailable}
+      {
+        /*
+        <ThemedView testID="safety-map-header" type="backgroundElement" style={styles.header}>
+          <ThemedText type="title">{strings.safetyMap.headerTitle}</ThemedText>
+          <ThemedText themeColor="textSecondary">{strings.safetyMap.headerSubtitle}</ThemedText>
+          {isLocating && (
+            <ThemedText testID="safety-map-location-status" type="small" themeColor="textSecondary">
+              {strings.safetyMap.locating}
             </ThemedText>
-          </Pressable>
-        )}
-      </ThemedView>
+          )}
+          {error && (
+            <Pressable testID="safety-map-location-retry" onPress={retry}>
+              <ThemedText type="small" style={styles.retryText}>
+                {strings.safetyMap.locationUnavailable}
+              </ThemedText>
+            </Pressable>
+          )}
+        </ThemedView>
+        */
+      }
+
     </View>
   );
 }
