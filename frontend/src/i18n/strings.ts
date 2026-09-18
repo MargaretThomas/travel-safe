@@ -4,6 +4,9 @@ export const strings = {
     headerTitle: 'Safety Map',
     headerSubtitle: 'Neighbourhood safety heatmap',
     legendCaption: 'Neighbourhood safety',
+    locating: 'Getting your location…',
+    liveLocationTitle: 'You are here',
+    locationUnavailable: 'Location unavailable — tap to retry',
   },
   legend: {
     safe: 'Safe',

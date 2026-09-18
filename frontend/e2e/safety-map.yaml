@@ -1,0 +1,29 @@
+appId: makers.travel.safe
+---
+# Live location + safety heatmap smoke test.
+# Expects a debug build with the scene-lifecycle fix installed on the simulator.
+
+- launchApp:
+    clearState: true
+
+# First launch prompts for location permission; accept it.
+- runFlow:
+    when:
+      visible: "Allow While Using App"
+    commands:
+      - tapOn: "Allow While Using App"
+
+# Home screen renders the safety map with its header and legend.
+- assertVisible:
+    id: "safety-map-header"
+- assertVisible:
+    id: "safety-map"
+- assertVisible:
+    id: "safety-legend"
+- assertVisible:
+    id: "safety-legend-gradient"
+
+- assertVisible:
+    text: "Safe"
+- assertVisible:
+    text: "Dangerous"
