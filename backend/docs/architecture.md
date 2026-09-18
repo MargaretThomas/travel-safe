@@ -8,6 +8,7 @@ optional persistence stay behind FastAPI.
 flowchart LR
     Mobile[React Native / Expo] --> API[FastAPI]
     API --> Safety[Safety services]
+    API --> Emergency[Emergency number fixture]
     Safety --> Snapshot[Validated 2025/2026 national snapshot]
     Safety -. optional full history .-> DF[DataFirst / SAPS annual CSV]
     Safety -. licensed enrichment .-> SafeSuburb[SafeSuburb]
@@ -28,6 +29,7 @@ a reliable contract.
 | `/api/v1/heatmap` | GET | `bbox`, `zoom`, optional `year`, `limit` | National station safety anchors |
 | `/api/v1/map/search` | GET | `q`, optional `year`, `limit` | Internal police-station search |
 | `/api/v1/areas/{area_code}/safety` | GET | optional `year` | Safety + danger signal |
+| `/api/v1/emergency-numbers` | GET | optional `service_type` | Verified emergency picker numbers + source attribution |
 
 ## Active national data priority
 
@@ -60,8 +62,9 @@ Map colours:
 - Orange `#F97316`: 45 <= danger score < 75;
 - Red `#EF4444`: danger score >= 75.
 
-**Halo is a separate community-place overlay and API. Halo ratings never alter
-these safety scores.**
+Halo is a separate community-place overlay and API. Halo ratings never alter
+these safety scores.
 
-See [danger-scoring.md](danger-scoring.md) and
-[safety-data-sources.md](safety-data-sources.md).
+See [danger-scoring.md](danger-scoring.md),
+[safety-data-sources.md](safety-data-sources.md), and
+[emergency-numbers.md](emergency-numbers.md).
