@@ -1,17 +1,21 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { strings } from '@/i18n/strings';
 import { safetyHexForScore } from '@/lib/safety-map';
 
 const GRADIENT_HEX_STOPS = [0, 25, 50, 75, 100].map(safetyHexForScore);
 const GRADIENT = `linear-gradient(90deg, ${GRADIENT_HEX_STOPS.join(', ')})`;
 
-export function SafetyLegend() {
+export type SafetyLegendProps = {
+  style?: StyleProp<ViewStyle>;
+};
+
+export function SafetyLegend({ style }: SafetyLegendProps) {
   return (
-    <ThemedView testID="safety-legend" type="backgroundElement" style={styles.container}>
+    <ThemedView testID="safety-legend" type="backgroundElement" style={[styles.container, style]}>
       <ThemedText type="smallBold">{strings.safetyMap.legendCaption}</ThemedText>
       <View style={styles.gradientRow}>
         <ThemedText type="small">{strings.legend.dangerous}</ThemedText>
@@ -24,10 +28,7 @@ export function SafetyLegend() {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    left: Spacing.three,
-    right: Spacing.three,
-    bottom: BottomTabInset + Spacing.four,
+    alignSelf: 'flex-start',
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
+    minWidth: 160,
     height: 10,
     borderRadius: 5,
   },
