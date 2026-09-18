@@ -23,6 +23,10 @@ Update this table first whenever an endpoint changes so the frontend team has a 
 | `/api/v1/stats` | GET | `area_code` | Precinct-level reported-crime statistics + caveats |
 | `/api/v1/heatmap` | GET | `bbox=west,south,east,north&zoom=5..18` | Aggregate map cells; never fabricated incident pins |
 | `/api/v1/areas/{area_code}/safety` | GET | Path area code | Confidence-aware signal; may return `insufficient_data` |
+| `/api/v1/location-groups` | POST | None | Demo-only group code + secret key |
+| `/api/v1/location-groups/{group_code}/join` | POST | `X-Group-Key`, temporary client/display name | Joins one demo member |
+| `/api/v1/location-groups/{group_code}/members/{client_id}/location` | PUT | `X-Group-Key`, lat/lng | Stores latest location + server timestamp |
+| `/api/v1/location-groups/{group_code}/locations` | GET | `X-Group-Key` | Pollable latest member locations + stale metadata |
 
 ## MVP data behavior
 
