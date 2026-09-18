@@ -12,7 +12,9 @@ public API consumed by the Travel Safe Expo client.
 | `/api/v1/dataset/status` | GET | Public | Active national safety-data mode |
 | `/api/v1/stats` | GET | Public | Station annual statistics |
 | `/api/v1/heatmap` | GET | Public | National station safety anchors |
-| `/api/v1/map/search` | GET | Public | Police-station search |
+| `/api/v1/map/search` | GET | Public | Police-station safety search |
+| `/api/v1/search` | GET | Public | Unified Halo + internal safety search |
+| `/api/v1/routes/analyse` | POST | Public | Lower-risk context for supplied real route alternatives |
 | `/api/v1/areas/{area_code}/safety` | GET | Public | Safety + danger signal |
 | `/api/v1/emergency-numbers` | GET | Public | Verified emergency picker numbers |
 | `/api/v1/location-groups` | POST | Public create | Demo group code + secret key |
@@ -80,3 +82,4 @@ See:
 - [trusted-location-groups.md](trusted-location-groups.md)
 - [halo.md](halo.md)
 - [frontend-backend-integration.md](frontend-backend-integration.md)
+- [search-routing.md](search-routing.md)

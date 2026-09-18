@@ -6,19 +6,20 @@ incompatible contracts.
 
 | Feature | Frontend surface | Backend contract | Status / owner |
 |---|---|---|---|
-| Safety heatmap | `frontend/src/components/safety-map.tsx`, `frontend/src/lib/safety-map.ts` | `GET /api/v1/heatmap` | #11 / Lathithaa — backend staged in PR #19; frontend still uses mock zones |
+| Safety heatmap | `frontend/src/components/safety-map.tsx`, `frontend/src/hooks/use-safety-heatmap.ts` | `GET /api/v1/heatmap` | Backend complete; latest `SafetyMap` still renders mock circles and needs frontend reconnection |
 | Area safety detail | future map detail/card | `GET /api/v1/areas/{area_code}/safety`, `GET /api/v1/stats` | #11 / Lathithaa — staged PR #19 |
 | Safety-map source provenance | future info/about panel | `GET /api/v1/sources`, `GET /api/v1/dataset/status` | #11 / Lathithaa — staged PR #19 |
-| Halo discovery | issue #6 screen, future map markers | `GET /api/v1/halo`, `GET /api/v1/halo/{id}` | #13/#24 — Halo contract branch; coordinate with Zoe/Margaret |
-| Halo submission | issue #6 screen | `POST /api/v1/halo` + `X-Client-ID` | #13/#24 — Halo contract branch |
-| Halo rating/like | Halo card/detail | `PUT /api/v1/halo/{id}/rating` + `X-Client-ID` | #24 / Lathithaa — implementing |
-| Halo rating enablement | Halo submitter/settings | `PUT /api/v1/halo/{id}/rating-settings` + `X-Client-ID` | #24 / Lathithaa — implementing |
-| Emergency picker numbers | issue #5 UI | `GET /api/v1/emergency-numbers` | #14 / Lathithaa — draft PR #22 |
+| Halo discovery | issue #6 screen, future map markers | `GET /api/v1/halo`, `GET /api/v1/halo/{id}` | Backend complete; #6 frontend screen remains owner work |
+| Halo submission | issue #6 screen | `POST /api/v1/halo` + `X-Client-ID` | Backend complete; frontend form not connected |
+| Halo rating/like | Halo card/detail | `PUT /api/v1/halo/{id}/rating` + `X-Client-ID` | Backend complete |
+| Halo rating enablement | Halo submitter/settings | `PUT /api/v1/halo/{id}/rating-settings` + `X-Client-ID` | Backend complete |
+| Emergency picker numbers | emergency-picker UI if retained | `GET /api/v1/emergency-numbers` | Backend complete; current SOS screen uses local SMS flow and does not require this endpoint |
 | Emergency service map locations | issue #5/map | `GET /api/v1/emergency-services` | #9 / Zoe — not yet merged |
-| Trusted contacts/location groups | issue #4 UI | create/join/publish/poll location-group endpoints + `X-Group-Key` | #8 / Lathithaa — draft PR #23 |
+| Trusted contacts/location groups | optional live-sharing UI | create/join/publish/poll location-group endpoints + `X-Group-Key` | Backend complete demo API; current trusted contacts remain local SQLite by design |
 | Global in-app alerts | issue #3 | `GET /api/v1/notifications` | #10 / Zoe — not yet merged |
-| External place/address search | issue #18 | map provider geocoder directly | frontend-owned / no backend proxy planned |
-| Internal Halo search | Halo/map search | `GET /api/v1/halo?q=...` | Halo contract branch |
+| Unified internal search | issue #12 map search | `GET /api/v1/search?q=...` | Backend complete; searches Halo + station/municipality/district data |
+| External place/address search | issue #12/map provider | geocoder directly | Frontend/provider-owned; no backend proxy planned |
+| Lower-risk route scoring | route alternatives on map | `POST /api/v1/routes/analyse` | Backend complete; requires real candidate polylines from frontend directions provider |
 | Settings | issue #7 | local app state for MVP | no backend required unless account sync is added |
 | Side navigation | issue #17 | navigation only | no backend required |
 
