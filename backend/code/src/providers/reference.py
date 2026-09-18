@@ -2,13 +2,24 @@ from src.models.safety import AreaStatsResponse, CrimeCategoryStat, DataSource
 
 SOURCES = [
     DataSource(
+        id="datafirst-saps-annual-v1.4",
+        name="DataFirst / SAPS Annual Crime Records 2005-2026",
+        status="active",
+        role="National station-level annual crime dataset and coordinates",
+        url="https://www.datafirst.uct.ac.za/dataportal/index.php/catalog/1012",
+        notes=(
+            "Version 1.4, CC-BY. Microdata download requires a free DataFirst login. "
+            "Travel Safe reads the downloaded CSV locally; it does not scrape DataFirst."
+        ),
+    ),
+    DataSource(
         id="saps",
         name="South African Police Service quarterly crime statistics",
         status="active",
         role="Canonical factual crime-count source",
         url="https://www.saps.gov.za/services/crimestats.php",
         notes=(
-            "Official precinct-level reported-crime aggregates. "
+            "Official police-station/precinct reported-crime aggregates. "
             "Not incident-level coordinates."
         ),
     ),

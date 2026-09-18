@@ -1,0 +1,8 @@
+# Raw/licensed/downloaded data stays local unless explicitly approved.
+*.csv
+*.zip
+*.dta
+*.sav
+*.por
+golden-spots.json
+!golden-spots.example.json
