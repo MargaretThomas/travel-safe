@@ -28,6 +28,17 @@ export const strings = {
     safe: 'Safe',
     dangerous: 'Dangerous',
   },
+  trip: {
+    title: 'Plan a trip',
+    originLabel: 'From',
+    originPlaceholder: 'Search a starting area',
+    destinationLabel: 'To',
+    destinationPlaceholder: 'Search a destination',
+    useCurrentLocation: 'Use current location',
+    currentLocationLabel: 'Current location',
+    planning: 'Building a safe pathway…',
+    planFailed: 'Could not plan this trip. Try another area.',
+  },
   fallback: {
     title: 'Interactive map unavailable',
     body: 'The safety heatmap is available in the iOS and Android apps.',

@@ -2,13 +2,16 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { ActivityIndicator, useColorScheme, View } from 'react-native';
 import { Suspense, useEffect, useState } from 'react';
+import Mapbox from '@rnmapbox/maps';
 import { db, DATABASE_NAME } from "@/db/client";
 import { SQLiteProvider } from 'expo-sqlite';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "@/drizzle/migrations";
+import { configureMapbox } from '@/lib/map/mapbox';
 
 SplashScreen.preventAutoHideAsync();
+configureMapbox(undefined, Mapbox);
 
 function RootNavigator() {
   return (
