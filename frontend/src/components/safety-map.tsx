@@ -1,19 +1,19 @@
 import { AppleMaps, GoogleMaps } from 'expo-maps';
 import type { CameraPosition } from 'expo-maps';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { SafetyLegend } from '@/components/safety-legend';
+import { useSafetyHeatmap } from '@/hooks/use-safety-heatmap';
 import { strings } from '@/i18n/strings';
 import { metersBetween, type LivePosition } from '@/lib/location';
 import {
   buildHeatCircles,
+  buildStationRiskCircles,
   DEFAULT_MAP_ZOOM,
   MOCK_SAFETY_ZONES,
   regionCenter,
 } from '@/lib/safety-map';
 
-const heatCircles = buildHeatCircles(MOCK_SAFETY_ZONES);
 const initialCameraPosition = {
   coordinates: regionCenter(MOCK_SAFETY_ZONES),
   zoom: DEFAULT_MAP_ZOOM,
@@ -36,6 +36,16 @@ export type SafetyMapProps = {
 export function SafetyMap({ style, liveLocation }: SafetyMapProps) {
   const mapRef = useRef<MapHandle | null>(null);
   const lastCenteredRef = useRef<LivePosition | null>(null);
+  const { zones, source } = useSafetyHeatmap(liveLocation);
+  const heatCircles = useMemo(() => {
+    if (source === 'api') {
+      return buildStationRiskCircles(zones);
+    }
+    if (source === 'empty') {
+      return [];
+    }
+    return buildHeatCircles(zones);
+  }, [source, zones]);
 
   const attachMapRef = useCallback((instance: unknown) => {
     mapRef.current = instance as MapHandle | null;
@@ -51,7 +61,10 @@ export function SafetyMap({ style, liveLocation }: SafetyMapProps) {
 
     lastCenteredRef.current = liveLocation;
     mapRef.current?.setCameraPosition?.({
-      // coordinates: { latitude: liveLocation.latitude, longitude: liveLocation.longitude },
+      coordinates: {
+        latitude: liveLocation.latitude,
+        longitude: liveLocation.longitude,
+      },
       zoom: LIVE_LOCATION_ZOOM,
     });
   }, [liveLocation]);

@@ -1,39 +1,67 @@
 # Backend Architecture
 
-The backend runs on Python 3.12 with FastAPI and Uvicorn. It is the single public API consumed by the Travel Safe Expo client. Persistence and external data providers stay behind FastAPI so the frontend does not depend on vendor-specific record shapes.
+The backend runs on Python 3.12 with FastAPI and Uvicorn. It is the single
+public API consumed by the Travel Safe Expo client. External data sources and
+optional persistence stay behind FastAPI.
 
 ```mermaid
 flowchart LR
     Mobile[React Native / Expo] --> API[FastAPI]
-    API --> Services[Safety services]
-    Services --> SAPS[SAPS official statistics]
-    Services -. licensed .-> SafeSuburb[SafeSuburb enrichment]
-    Services -. reference .-> SafetyBrief[SafetyBrief methodology]
-    Services -. optional .-> DB[(Supabase / PocketBase adapter)]
+    API --> Safety[Safety services]
+    Safety --> Snapshot[Validated 2025/2026 national snapshot]
+    Safety -. optional full history .-> DF[DataFirst / SAPS annual CSV]
+    Safety -. licensed enrichment .-> SafeSuburb[SafeSuburb]
+    Safety -. methodology reference .-> SafetyBrief[SafetyBrief]
 ```
 
 ## API contract
 
-Update this table first whenever an endpoint changes so the frontend team has a reliable contract.
+Update this table first whenever an endpoint changes so the frontend team has
+a reliable contract.
 
 | Endpoint | Method | Request shape | Response shape |
 |---|---|---|---|
 | `/health` | GET | None | `{ "status": "ok" }` |
-| `/api/v1/sources` | GET | None | Source list with governance status, role and URL |
-| `/api/v1/stats` | GET | `area_code` | Precinct-level reported-crime statistics + caveats |
-| `/api/v1/heatmap` | GET | `bbox=west,south,east,north&zoom=5..18` | Aggregate map cells; never fabricated incident pins |
-| `/api/v1/areas/{area_code}/safety` | GET | Path area code | Confidence-aware signal; may return `insufficient_data` |
+| `/api/v1/sources` | GET | None | Source list with governance status |
+| `/api/v1/dataset/status` | GET | None | Active national data mode/coverage |
+| `/api/v1/stats` | GET | `area_code`, optional `year` | Station annual statistics |
+| `/api/v1/heatmap` | GET | `bbox`, `zoom`, optional `year`, `limit` | National station safety anchors |
+| `/api/v1/map/search` | GET | `q`, optional `year`, `limit` | Internal police-station search |
+| `/api/v1/areas/{area_code}/safety` | GET | optional `year` | Safety + danger signal |
 
-## MVP data behavior
+## Active national data priority
 
-The first review branch contains one deterministic Woodstock reference fixture so frontend work can integrate against a realistic response shape.
+1. A configured full DataFirst v1.4 CSV is used only when it validates the
+   official signature: 24,206 records, latest year 2025/2026, 1,174 stations.
+2. Otherwise the backend uses the checked-in validated 2025/2026 derived
+   snapshot containing 1,128 mappable stations.
+3. If neither national source is available, only the limited reference fixture
+   is available.
 
-- Period: Apr 2025–Mar 2026.
-- Total reported crimes: 3,541.
-- Latest quarter Apr–Jun 2026: 910 vs 800 in Apr–Jun 2025.
-- Data resolution remains whole police precinct.
-- The fixture is not a live SafeSuburb feed and must not be represented as one.
-- Heat-map centroids are area context only, not crime-event coordinates.
-- The API intentionally withholds a safety score until peer calibration, denominator quality and model validation are agreed.
+The public `dataset/status` response exposes only the filename/data mode, not
+an absolute server filesystem path.
 
-See [safety-data-sources.md](safety-data-sources.md) for source governance.
+## National heat-map contract
+
+Each mappable station record can expose:
+
+- station, municipality and district;
+- `danger_score` from 0-100;
+- inverse `safety_score`;
+- `risk_band`: green, orange or red;
+- frontend-ready colour;
+- common crime categories;
+- confidence and quality flags;
+- explicit annual police-station aggregate resolution.
+
+Map colours:
+
+- Green `#22C55E`: danger score < 45;
+- Orange `#F97316`: 45 <= danger score < 75;
+- Red `#EF4444`: danger score >= 75.
+
+**Halo is a separate community-place overlay and API. Halo ratings never alter
+these safety scores.**
+
+See [danger-scoring.md](danger-scoring.md) and
+[safety-data-sources.md](safety-data-sources.md).

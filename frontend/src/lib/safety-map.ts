@@ -1,9 +1,13 @@
+export type RiskBand = 'green' | 'orange' | 'red';
+
 export type SafetyZone = {
   id: string;
   name: string;
   latitude: number;
   longitude: number;
   safetyScore: number;
+  riskBand?: RiskBand;
+  color?: string;
 };
 
 export type SafetyGridPoint = {
@@ -166,6 +170,35 @@ export function buildHeatCircles(
     center: { latitude: point.latitude, longitude: point.longitude },
     radius,
     color: safetyColorForScore(point.score, alpha),
+  }));
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return hex;
+  }
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function buildStationRiskCircles(
+  zones: SafetyZone[],
+  options: { radius?: number; alpha?: number } = {},
+): HeatCircle[] {
+  const radius = options.radius ?? 3500;
+  const alpha = options.alpha ?? 0.38;
+
+  return zones.map((zone) => ({
+    id: `station-risk-${zone.id}`,
+    center: { latitude: zone.latitude, longitude: zone.longitude },
+    radius,
+    color: hexToRgba(
+      zone.color ?? safetyHexForScore(zone.safetyScore),
+      alpha,
+    ),
   }));
 }
 
