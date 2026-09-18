@@ -23,6 +23,7 @@ Update this table first whenever an endpoint changes so the frontend team has a 
 | `/api/v1/stats` | GET | `area_code` | Precinct-level reported-crime statistics + caveats |
 | `/api/v1/heatmap` | GET | `bbox=west,south,east,north&zoom=5..18` | Aggregate map cells; never fabricated incident pins |
 | `/api/v1/areas/{area_code}/safety` | GET | Path area code | Confidence-aware signal; may return `insufficient_data` |
+| `/api/v1/emergency-numbers` | GET | Optional `service_type` | Verified emergency picker numbers + coverage/source attribution |
 
 ## MVP data behavior
 
