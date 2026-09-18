@@ -1,58 +1,97 @@
 # Safety Data Sources and Governance
 
-## Principle
+## DataFirst / SAPS Annual Crime Records 2005-2026
 
-Travel Safe must distinguish factual crime statistics from derived safety signals. Every API response should make its data resolution, provenance and limitations visible.
+Primary nationwide analytical dataset:
 
-## SAPS
+- DataFirst catalogue: `https://www.datafirst.uct.ac.za/dataportal/index.php/catalog/1012`
+- DOI: `https://doi.org/10.25828/5MAW-4H90`
+- Dataset version: **1.4**, dated 14 September 2026
+- Producer: South African Police Service
+- Distributor: DataFirst, University of Cape Town
+- Licence: Creative Commons CC-BY (Attribution-only)
+- Geography: South Africa, police-station level
+- Coverage: 2005/06 through 2025/26
+- File: 24,206 station-year records, 38 variables
 
-Primary factual source:
+Required citation:
 
-- https://www.saps.gov.za/services/crimestats.php
+> South African Police Service. South African Police Service Annual Crime
+> Records 2005-2026 [dataset]. Version 1.4. Pretoria: SAPS [producer], 2026.
+> Cape Town: DataFirst [distributor], 2026. DOI:
+> https://doi.org/10.25828/5MAW-4H90
 
-SAPS quarterly crime statistics are reported at police-station / precinct level. They are not exact suburb-level or street-level incident coordinates.
+## Checked-in 2025/2026 snapshot
 
-Rules:
-- keep the original period and category names;
-- preserve source URLs and ingestion timestamps once automated ingestion exists;
-- do not generate random incident points inside a precinct;
-- do not imply reported-crime totals capture unreported crime.
+For the hackathon demo, the backend includes a derived compressed snapshot:
+
+`backend/data/safety-map-2025-2026.danger-v1.1.json.gz`
+
+It was generated from the validated v1.4 CSV and records:
+
+- source records: **24,206**;
+- 2025/2026 station rows: **1,174**;
+- mappable stations: **1,128**;
+- model: **danger-v1.1**;
+- calibrated bands: 544 green, 365 orange, 219 red.
+
+The snapshot is derived CC-BY data and retains the DataFirst/SAPS source ID and
+DOI. It contains only the fields needed for the demo API rather than the full
+historical microdata.
+
+A configured raw CSV overrides the snapshot only if it matches the official
+v1.4 signature. A truncated or older compatible file is reported as
+`unverified` and does not replace the verified national snapshot.
+
+## Interpretation
+
+The source contains recorded offence **counts/charges**, not unique incidents,
+case dockets, victims, or exact crime locations. One docket can contribute
+multiple offence counts.
+
+Station longitude/latitude is a map anchor for an annual station aggregate.
+Travel Safe must not present it as the location of the crimes counted.
+
+The historical dataset is not a balanced panel. Station counts change over
+time. Search aliases support the 2025/2026 gazetted renames:
+
+- Aberdeen -> Xamdeboo
+- Graaff-Reinet -> Robert Sobukwe
+- East London -> Kugompo
+- Barkly East -> Ekhephinit
+
+## Police-action categories
+
+Drug-related crime, DUI, illegal firearm possession and sexual offences
+detected by police action remain visible in common-crime context but do not
+drive `danger_score`. Those counts can increase because enforcement activity
+increased rather than because underlying victimisation increased.
+
+## Negative values
+
+Some source variables contain negative correction values. The backend clamps
+these values to zero **for scoring only** and records a quality flag.
 
 ## SafeSuburb
 
-References:
-- https://safesuburb.co.za/data/
-- https://safesuburb.co.za/methodology/
-- https://safesuburb.co.za/western-cape/city-of-cape-town/woodstock/
-
-SafeSuburb publishes official SAPS counts in a more usable suburb/precinct experience. Its commercial value is the maintained suburb-to-precinct mapping, cleaned dataset and confidence/provenance grades.
-
-Integration rule:
-- do not scrape SafeSuburb into the product;
-- commercial use of its compiled dataset should use a licence/structured feed;
-- its self-serve API is not currently live;
-- the review branch uses one manually referenced Woodstock page only as a deterministic integration fixture.
-
-The fixture must be replaced by an agreed live ingestion/provider before production use.
+SafeSuburb remains a potential licensed enrichment source for maintained
+suburb-to-precinct mapping. Travel Safe must not scrape its compiled commercial
+dataset.
 
 ## SafetyBrief
 
-References:
-- https://www.safetybrief.co.za/map
-- https://www.safetybrief.co.za/methodology
+SafetyBrief remains a methodology/UX benchmark unless a licensed programmatic
+feed is confirmed. Travel Safe does not copy SafetyBrief safety grades.
 
-Use SafetyBrief as a methodology and UX benchmark unless the team obtains a licensed programmatic feed. Do not silently copy its safety grades into Travel Safe.
+## Halo separation
 
-## Safety scoring
+Halo is a separate community-place and visitability system. Halo ratings,
+likes, and visit evidence never modify DataFirst/SAPS safety scores or risk
+bands.
 
-The endpoint exists now, but the MVP deliberately returns `insufficient_data` rather than pseudo-precision.
+## Privacy and map precision
 
-Before producing a numeric Travel Safe score, the backend team should agree:
-1. peer groups for comparison;
-2. denominator quality and population source;
-3. trend window;
-4. category weighting;
-5. confidence degradation for incomplete/stale data;
-6. validation against known edge cases.
-
-A score must be presented as a planning signal, not a guarantee of personal safety.
+- Never generate synthetic incident points from station aggregates.
+- Never expose victim identity or sensitive narrative through this data layer.
+- Never describe station-level counts as suburb/street incident locations.
+- Keep source, year, confidence and model caveats visible to the frontend.
