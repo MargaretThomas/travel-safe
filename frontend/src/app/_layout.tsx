@@ -1,25 +1,64 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { ActivityIndicator, useColorScheme } from 'react-native';
-import { Suspense } from 'react';
+import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { Suspense, useEffect, useState } from 'react';
 import { db, DATABASE_NAME } from "@/db/client";
 import { SQLiteProvider } from 'expo-sqlite';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
+import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "@/drizzle/migrations";
-import { View, Text } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const { success, error: migrationError } = useMigrations(db, migrations);
+function RootNavigator() {
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(home)" />
+      <Stack.Screen name="trusted-contacts" />
+      <Stack.Screen name="trusted-contacts/onboarding" />
+      <Stack.Screen name="trusted-contacts/add" />
+    </Stack>
+  );
+}
 
-  if (migrationError) {
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [migrationReady, setMigrationReady] = useState(false);
+  const [migrationFailed, setMigrationFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    migrate(db, migrations)
+      .then(() => {
+        if (active) setMigrationReady(true);
+      })
+      .catch(() => {
+        if (active) setMigrationFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (migrationFailed) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      </View>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }} />
+    );
+  }
+
+  if (!migrationReady) {
+    return (
+      <Suspense fallback={<ActivityIndicator size="large" />}>
+        <SQLiteProvider
+          databaseName={DATABASE_NAME}
+          options={{ enableChangeListener: true }}
+          useSuspense
+        >
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" />
+          </View>
+        </SQLiteProvider>
+      </Suspense>
     );
   }
 
@@ -32,7 +71,7 @@ export default function TabLayout() {
     >
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AnimatedSplashOverlay />
-        <AppTabs />
+        <RootNavigator />
       </ThemeProvider>
     </SQLiteProvider>
     </Suspense>
