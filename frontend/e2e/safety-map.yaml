@@ -1,7 +1,8 @@
 appId: makers.travel.safe
 ---
 # Live location + safety heatmap smoke test.
-# Expects a debug build with the scene-lifecycle fix installed on the simulator.
+# Expects a debug build on a simulator/emulator with location permission
+# available so the system prompt can be accepted on first launch.
 
 - launchApp:
     clearState: true
@@ -13,16 +14,24 @@ appId: makers.travel.safe
     commands:
       - tapOn: "Allow While Using App"
 
-# Home screen renders the safety map with its header and legend.
-- assertVisible:
-    id: "safety-map-header"
+# Android wording for the same prompt.
+- runFlow:
+    when:
+      visible: "While using the app"
+    commands:
+      - tapOn: "While using the app"
+
+# Home screen renders the safety map with the legend overlaid.
 - assertVisible:
     id: "safety-map"
+- assertVisible:
+    id: "map-view"
 - assertVisible:
     id: "safety-legend"
 - assertVisible:
     id: "safety-legend-gradient"
 
+# The legend explains the heatmap colours.
 - assertVisible:
     text: "Safe"
 - assertVisible:
