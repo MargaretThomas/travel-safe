@@ -117,4 +117,50 @@ export const strings = {
       other: 'Other',
     },
   },
+  emergency: {
+    homeEntry: {
+      title: 'Emergency SOS',
+      body: 'Alert your trusted contacts and share your live location.',
+      cta: 'SOS',
+    },
+    screen: {
+      title: 'Emergency SOS',
+      subtitle: 'Instantly notify your trusted contacts with your current location.',
+    },
+    idle: {
+      triggerHint: 'Press SOS when you feel unsafe. A short countdown lets you cancel by accident.',
+      accuracy: 'Location accuracy',
+    },
+    trigger: {
+      label: 'SOS',
+    },
+    countdown: {
+      eyebrow: 'Emergency alert',
+      prompt: 'Sending alert in…',
+      cancel: 'Cancel SOS',
+    },
+    active: {
+      title: 'Emergency active',
+      alertSentOne: 'Alert sent to {count} trusted contact',
+      alertSentMany: 'Alert sent to {count} trusted contacts',
+      alertSentNoRecipients: 'You have no trusted contacts to alert yet. Add some before triggering SOS.',
+      alertFailed: 'Alert could not be delivered. Stay visible and keep your location sharing on.',
+      sharing: 'Sharing your live location with your trusted contacts.',
+      updates: 'Location updates sent',
+      accuracy: 'Location accuracy',
+      end: 'End emergency',
+    },
+    ended: {
+      title: 'Emergency ended',
+      body: 'Live location sharing has stopped. Helpful people can still see the alert you already sent.',
+      done: 'Done',
+    },
+    locationUnavailable: 'Location unavailable — alerts won’t include your position yet.',
+    send: {
+      alertBody:
+        '{appName} — emergency alert. Help needed now.\nCurrent location: {location}{accuracy}\nStarted {startedAt}.',
+      updateBody:
+        '{appName} — live location update.\nCurrent location: {location}{accuracy}\nStarted {startedAt}.',
+    },
+  },
 } as const;

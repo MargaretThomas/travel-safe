@@ -14,25 +14,48 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <SafetyMap liveLocation={position} />
-      <Pressable
-        testID="home-trusted-contacts-entry"
-        accessibilityRole="button"
-        onPress={() => router.push('/trusted-contacts')}
-        style={styles.entryHitbox}>
-        {({ pressed }) => (
-          <ThemedView
-            type="backgroundSelected"
-            style={[styles.entry, pressed && styles.entryPressed]}>
-            <ThemedText type="smallBold">{strings.trustedContacts.homeEntry.title}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {strings.trustedContacts.homeEntry.body}
-            </ThemedText>
-            <ThemedText type="smallBold" themeColor="brandText" style={styles.cta}>
-              {strings.trustedContacts.homeEntry.cta}
-            </ThemedText>
-          </ThemedView>
-        )}
-      </Pressable>
+      <View style={styles.entries}>
+        <Pressable
+          testID="home-sos-entry"
+          accessibilityRole="button"
+          onPress={() => router.push('/emergency')}
+          style={styles.entryHitbox}>
+          {({ pressed }) => (
+            <ThemedView
+              type="backgroundSelected"
+              style={[styles.entry, pressed && styles.entryPressed]}>
+              <ThemedText type="smallBold" themeColor="brandText">
+                {strings.emergency.homeEntry.title}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {strings.emergency.homeEntry.body}
+              </ThemedText>
+              <ThemedText type="smallBold" themeColor="brandText" style={styles.cta}>
+                {strings.emergency.homeEntry.cta}
+              </ThemedText>
+            </ThemedView>
+          )}
+        </Pressable>
+        <Pressable
+          testID="home-trusted-contacts-entry"
+          accessibilityRole="button"
+          onPress={() => router.push('/trusted-contacts')}
+          style={styles.entryHitbox}>
+          {({ pressed }) => (
+            <ThemedView
+              type="backgroundSelected"
+              style={[styles.entry, pressed && styles.entryPressed]}>
+              <ThemedText type="smallBold">{strings.trustedContacts.homeEntry.title}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {strings.trustedContacts.homeEntry.body}
+              </ThemedText>
+              <ThemedText type="smallBold" themeColor="brandText" style={styles.cta}>
+                {strings.trustedContacts.homeEntry.cta}
+              </ThemedText>
+            </ThemedView>
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -41,22 +64,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  entryHitbox: {
+  entries: {
     position: 'absolute',
     bottom: BottomTabInset + Spacing.four,
     left: Spacing.three,
     right: Spacing.three,
+    gap: Spacing.two,
+  },
+  entryHitbox: {
+    width: '100%',
   },
   entry: {
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
     gap: Spacing.half,
-    shadowColor: '#000000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   entryPressed: {
     opacity: 0.8,
