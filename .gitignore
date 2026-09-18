@@ -2,7 +2,7 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
-
+_frontend
 # Editors
 .vscode/*
 !.vscode/extensions.json
