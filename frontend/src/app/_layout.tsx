@@ -14,6 +14,7 @@ function RootNavigator() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(home)" />
+      <Stack.Screen name="emergency" />
       <Stack.Screen name="trusted-contacts" />
       <Stack.Screen name="trusted-contacts/onboarding" />
       <Stack.Screen name="trusted-contacts/add" />

@@ -13,6 +13,8 @@ export const Colors = {
     textSecondary: '#60646C',
     brand: '#4cf56b',
     brandText: '#0a2010',
+    danger: '#e5484d',
+    dangerText: '#ffffff',
   },
   dark: {
     text: '#ffffff',
@@ -22,6 +24,8 @@ export const Colors = {
     textSecondary: '#B0B4BA',
     brand: '#4cf56b',
     brandText: '#0a2010',
+    danger: '#e5484d',
+    dangerText: '#ffffff',
   },
 } as const;
 
