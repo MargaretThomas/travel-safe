@@ -116,10 +116,11 @@ class DatasetStatusResponse(BaseModel):
     load_error: str | None = None
     nationwide_ready: bool = False
     model_version: str = "danger-v1.1"
+    data_mode: str = "reference_only"
 
 
 class MapSearchResult(BaseModel):
-    result_type: Literal["police_station", "golden_spot"]
+    result_type: Literal["police_station"]
     id: str
     name: str
     latitude: float
@@ -136,24 +137,3 @@ class MapSearchResult(BaseModel):
 class MapSearchResponse(BaseModel):
     query: str
     results: list[MapSearchResult]
-
-
-class GoldenSpot(BaseModel):
-    id: str
-    name: str
-    category: str
-    latitude: float
-    longitude: float
-    local_municipality: str | None = None
-    district_municipality: str | None = None
-    source_label: str
-    source_url: str | None = None
-    verified: bool = False
-    last_verified: str | None = None
-    description: str | None = None
-    color: str = "#D4AF37"
-
-
-class GoldenSpotResponse(BaseModel):
-    spots: list[GoldenSpot]
-    caveat: str

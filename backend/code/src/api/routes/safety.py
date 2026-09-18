@@ -4,7 +4,6 @@ from src.models.safety import (
     AreaStatsResponse,
     DatasetStatusResponse,
     DataSource,
-    GoldenSpotResponse,
     HeatmapResponse,
     MapSearchResponse,
     SafetySignalResponse,
@@ -68,7 +67,10 @@ def get_heatmap(
         limit=limit,
     )
     if result is None:
-        raise HTTPException(status_code=404, detail="Requested year is not available")
+        raise HTTPException(
+            status_code=404,
+            detail="Requested year is not available",
+        )
     return result
 
 
@@ -79,14 +81,6 @@ def search_map(
     limit: int = Query(20, ge=1, le=50),
 ) -> MapSearchResponse:
     return service.search(q, year=year, limit=limit)
-
-
-@router.get("/golden-spots", response_model=GoldenSpotResponse)
-def golden_spots(
-    bbox: str = Query(..., description="west,south,east,north"),
-    q: str | None = None,
-) -> GoldenSpotResponse:
-    return service.golden_spots(parse_bbox(bbox), query=q)
 
 
 @router.get(

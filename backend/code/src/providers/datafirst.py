@@ -390,11 +390,6 @@ class DataFirstCrimeProvider:
                     color="#EF4444",
                     meaning="High relative danger burden.",
                 ),
-                HeatmapLegendItem(
-                    band="gold",
-                    color="#D4AF37",
-                    meaning="Curated local known spot; not a safety guarantee.",
-                ),
             ],
         )
 
@@ -567,4 +562,5 @@ class DataFirstCrimeProvider:
             load_error=self.load_error,
             nationwide_ready=matches_v14_signature,
             model_version=MODEL_VERSION,
+            data_mode="raw_csv",
         )
