@@ -43,9 +43,9 @@ When the DataFirst CSV is loaded, every mappable police-station/year row can pro
 
 Map colours are contract values:
 
-- Green `#22C55E`: danger score `< 40`;
-- Orange `#F97316`: `40 <= score < 70`;
-- Red `#EF4444`: `score >= 70`;
+- Green `#22C55E`: danger score `< 45`;
+- Orange `#F97316`: `45 <= score < 75`;
+- Red `#EF4444`: `score >= 75`;
 - Gold `#D4AF37`: curated local-known spot, not a safety grade.
 
 See [danger-scoring.md](danger-scoring.md) for the algorithm and [safety-data-sources.md](safety-data-sources.md) for source governance.

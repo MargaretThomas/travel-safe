@@ -76,9 +76,9 @@ These categories are strongly influenced by enforcement activity, so higher coun
 
 | Band | Score | Colour | Meaning |
 |---|---:|---|---|
-| Green | 0-39.99 | `#22C55E` | Lower relative danger burden for that year |
-| Orange | 40-69.99 | `#F97316` | Elevated relative danger burden |
-| Red | 70-100 | `#EF4444` | High relative danger burden |
+| Green | 0-44.99 | `#22C55E` | Lower relative danger burden for that year |
+| Orange | 45-74.99 | `#F97316` | Elevated relative danger burden |
+| Red | 75-100 | `#EF4444` | High relative danger burden |
 | Gold | n/a | `#D4AF37` | Curated local known spot; not a crime grade |
 
 ## Confidence and data quality
@@ -97,4 +97,4 @@ Stations without coordinates remain available to statistics/search logic where a
 
 ## Model version
 
-Initial algorithm version: `danger-v1`.
+Calibrated algorithm version: `danger-v1.1`.

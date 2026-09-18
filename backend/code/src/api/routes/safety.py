@@ -61,12 +61,15 @@ def get_heatmap(
     year: str | None = None,
     limit: int = Query(1500, ge=1, le=1500),
 ) -> HeatmapResponse:
-    return service.heatmap(
+    result = service.heatmap(
         parse_bbox(bbox),
         zoom,
         year=year,
         limit=limit,
     )
+    if result is None:
+        raise HTTPException(status_code=404, detail="Requested year is not available")
+    return result
 
 
 @router.get("/map/search", response_model=MapSearchResponse)

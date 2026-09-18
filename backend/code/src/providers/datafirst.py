@@ -1,4 +1,5 @@
 import csv
+import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,6 +8,7 @@ from src.core.config import get_setting
 from src.core.risk_model import (
     CATEGORY_LABELS,
     DANGER_WEIGHTS,
+    MODEL_VERSION,
     POLICE_ACTION_FIELDS,
     danger_score,
     risk_band,
@@ -29,6 +31,10 @@ DATASET_SOURCE_ID = "datafirst-saps-annual-v1.4"
 DATASET_VERSION = "1.4"
 DATASET_URL = "https://www.datafirst.uct.ac.za/dataportal/index.php/catalog/1012"
 DEFAULT_FILENAME = "sapacr-2005-2026-v1_4.csv"
+EXPECTED_TOTAL_RECORDS = 24206
+EXPECTED_LATEST_YEAR = "2025/2026"
+EXPECTED_LATEST_STATIONS = 1174
+logger = logging.getLogger(__name__)
 PARTIAL_2025_26_STATIONS = {"koopmansfontein", "tafalehashe"}
 STATION_ALIASES_2025_26 = {
     "aberdeen": "xamdeboo",
@@ -122,10 +128,8 @@ class DataFirstCrimeProvider:
 
     def _load(self) -> None:
         if not self.path.exists():
-            self.load_error = (
-                f"Dataset not found at {self.path}. "
-                "Download the DataFirst CSV and set SAPS_CRIME_CSV_PATH."
-            )
+            logger.warning("DataFirst dataset not found at %s", self.path)
+            self.load_error = "National DataFirst CSV is not installed or configured."
             return
 
         try:
@@ -162,8 +166,9 @@ class DataFirstCrimeProvider:
                         }
                     )
             self._build_profiles()
-        except (OSError, ValueError, csv.Error) as exc:
-            self.load_error = str(exc)
+        except (OSError, ValueError, csv.Error):
+            logger.exception("Failed to load DataFirst dataset from %s", self.path)
+            self.load_error = "National DataFirst CSV could not be loaded."
 
     def _build_profiles(self) -> None:
         rows_by_year: dict[str, list[dict[str, object]]] = {}
@@ -362,25 +367,25 @@ class DataFirstCrimeProvider:
             ],
             year=selected_year,
             source_id=DATASET_SOURCE_ID,
-            model_version="danger-v1",
+            model_version=MODEL_VERSION,
             legend=[
                 HeatmapLegendItem(
                     band="green",
                     min_score=0,
-                    max_score=39.99,
+                    max_score=44.99,
                     color="#22C55E",
                     meaning="Lower relative danger burden for the selected year.",
                 ),
                 HeatmapLegendItem(
                     band="orange",
-                    min_score=40,
-                    max_score=69.99,
+                    min_score=45,
+                    max_score=74.99,
                     color="#F97316",
                     meaning="Elevated relative danger burden.",
                 ),
                 HeatmapLegendItem(
                     band="red",
-                    min_score=70,
+                    min_score=75,
                     max_score=100,
                     color="#EF4444",
                     meaning="High relative danger burden.",
@@ -461,7 +466,7 @@ class DataFirstCrimeProvider:
             risk_band=profile.risk_band,
             color=profile.color,
             top_crimes=self._top_crimes(profile),
-            model_version="danger-v1",
+            model_version=MODEL_VERSION,
         )
 
     def search(
@@ -543,10 +548,16 @@ class DataFirstCrimeProvider:
             for item in latest_profiles
             if item.latitude is not None and item.longitude is not None
         )
+        matches_v14_signature = (
+            self.available
+            and len(self._rows) == EXPECTED_TOTAL_RECORDS
+            and latest == EXPECTED_LATEST_YEAR
+            and len(latest_profiles) == EXPECTED_LATEST_STATIONS
+        )
         return DatasetStatusResponse(
             loaded=self.available,
             source_id=DATASET_SOURCE_ID,
-            dataset_version=DATASET_VERSION,
+            dataset_version=DATASET_VERSION if matches_v14_signature else "unverified",
             path=self.path.name,
             latest_year=latest,
             years=self.years,
@@ -554,5 +565,6 @@ class DataFirstCrimeProvider:
             stations_latest_year=len(latest_profiles),
             mappable_latest_year=mappable,
             load_error=self.load_error,
-            nationwide_ready=self.available and mappable >= 1000,
+            nationwide_ready=matches_v14_signature,
+            model_version=MODEL_VERSION,
         )

@@ -210,3 +210,48 @@ def test_fastapi_heatmap_uses_national_provider_when_loaded(
         "red",
         "gold",
     }
+
+
+def test_invalid_year_does_not_fall_back_to_reference_fixture(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    dataset = tmp_path / "saps.csv"
+    write_dataset(dataset)
+    service = SafetyService(
+        national_provider=DataFirstCrimeProvider(dataset),
+        golden_provider=GoldenSpotProvider(tmp_path / "missing.json"),
+    )
+    monkeypatch.setattr(safety_routes, "service", service)
+
+    response = client.get(
+        "/api/v1/heatmap",
+        params={"bbox": "18.3,-34.1,18.7,-33.7", "year": "1900/1901"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Requested year is not available"
+
+
+def test_incomplete_dataset_is_not_claimed_as_v14_nationwide(tmp_path) -> None:
+    dataset = tmp_path / "saps.csv"
+    write_dataset(dataset)
+    provider = DataFirstCrimeProvider(dataset)
+
+    status = provider.status()
+
+    assert status.loaded is True
+    assert status.dataset_version == "unverified"
+    assert status.nationwide_ready is False
+
+
+def test_public_status_does_not_expose_dataset_filesystem_path(tmp_path) -> None:
+    secret_path = tmp_path / "private" / "crime.csv"
+    provider = DataFirstCrimeProvider(secret_path)
+
+    status = provider.status()
+    serialized = status.model_dump_json()
+
+    assert status.loaded is False
+    assert str(secret_path) not in serialized
+    assert status.load_error == "National DataFirst CSV is not installed or configured."

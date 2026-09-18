@@ -44,16 +44,14 @@ class SafetyService:
         zoom: int,
         year: str | None = None,
         limit: int = 1500,
-    ) -> HeatmapResponse:
+    ) -> HeatmapResponse | None:
         if self.national_provider.available:
-            national = self.national_provider.heatmap(
+            return self.national_provider.heatmap(
                 bbox=bbox,
                 zoom=zoom,
                 year=year,
                 limit=limit,
             )
-            if national is not None:
-                return national
 
         west, south, east, north = bbox
         lat, lon = WOODSTOCK_CENTROID
@@ -125,10 +123,10 @@ class SafetyService:
         year: str | None = None,
         limit: int = 20,
     ) -> MapSearchResponse:
-        station_results = self.national_provider.search(
-            query=query,
-            year=year,
-            limit=limit,
+        station_results = (
+            self.national_provider.search(query=query, year=year, limit=limit)
+            if self.national_provider.available
+            else []
         )
         remaining = max(0, limit - len(station_results))
         golden_results = self.golden_provider.search(query, limit=remaining)

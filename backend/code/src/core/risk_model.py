@@ -1,5 +1,9 @@
 from bisect import bisect_left
 
+MODEL_VERSION = "danger-v1.1"
+GREEN_MAX = 45.0
+ORANGE_MAX = 75.0
+
 RISK_COLORS = {
     "green": "#22C55E",
     "orange": "#F97316",
@@ -119,9 +123,9 @@ def danger_score(
 
 
 def risk_band(score: float) -> str:
-    if score < 40:
+    if score < GREEN_MAX:
         return "green"
-    if score < 70:
+    if score < ORANGE_MAX:
         return "orange"
     return "red"
 

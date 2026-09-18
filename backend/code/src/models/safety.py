@@ -115,7 +115,7 @@ class DatasetStatusResponse(BaseModel):
     mappable_latest_year: int = Field(default=0, ge=0)
     load_error: str | None = None
     nationwide_ready: bool = False
-    model_version: str = "danger-v1"
+    model_version: str = "danger-v1.1"
 
 
 class MapSearchResult(BaseModel):
