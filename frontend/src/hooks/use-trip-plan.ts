@@ -45,9 +45,6 @@ export function useTripPlan(
   const originRef = useRef<TripPoint | null>(null);
   const destinationRef = useRef<TripPoint | null>(null);
   const requestIdRef = useRef(0);
-  const snapToRoadsRef = useRef(snapToRoads);
-  snapToRoadsRef.current = snapToRoads;
-
   const requestPlan = useCallback(
     (nextOrigin: TripPoint, nextDestination: TripPoint) => {
       const requestId = ++requestIdRef.current;
@@ -59,7 +56,7 @@ export function useTripPlan(
         destination: nextDestination,
         profile: 'driving',
       })
-        .then((next) => snapToRoadsRef.current(next))
+        .then((next) => snapToRoads(next))
         .then((next) => {
           if (requestIdRef.current !== requestId) return;
           setPlan(next);
@@ -67,7 +64,7 @@ export function useTripPlan(
         })
         .catch(async () => {
           if (requestIdRef.current !== requestId) return;
-          const fallback = await snapToRoadsRef.current(
+          const fallback = await snapToRoads(
             buildClientTripPlan(nextOrigin, nextDestination),
           );
           if (requestIdRef.current !== requestId) return;
@@ -75,7 +72,7 @@ export function useTripPlan(
           setStatus('error');
         });
     },
-    [planTrip],
+    [planTrip, snapToRoads],
   );
 
   const selectOrigin = useCallback(

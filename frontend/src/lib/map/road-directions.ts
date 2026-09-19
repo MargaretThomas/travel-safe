@@ -55,7 +55,7 @@ export async function fetchMapboxRoadPathway(
   try {
     const response = await fetchImpl(url);
     if (!response.ok) return null;
-    const payload = (await response.json()) as { routes?: Array<{ geometry?: { coordinates?: unknown }; distance?: unknown; duration?: unknown }> };
+    const payload = (await response.json()) as { routes?: { geometry?: { coordinates?: unknown }; distance?: unknown; duration?: unknown }[] };
     const route = payload.routes?.[0];
     if (!route) return null;
     return pathwayFromRoute(route, 'mapbox');
@@ -77,7 +77,7 @@ export async function fetchOsrmRoadPathway(
     if (!response.ok) return null;
     const payload = (await response.json()) as {
       code?: string;
-      routes?: Array<{ geometry?: { coordinates?: unknown }; distance?: unknown; duration?: unknown }>;
+      routes?: { geometry?: { coordinates?: unknown }; distance?: unknown; duration?: unknown }[];
     };
     if (payload.code && payload.code !== 'Ok') return null;
     const route = payload.routes?.[0];
