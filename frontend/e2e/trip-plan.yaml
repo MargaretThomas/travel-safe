@@ -1,0 +1,53 @@
+appId: makers.travel.safe
+---
+# Plan a trip from the home map using place search dropdowns.
+# Accepts the location permission prompt when it appears.
+
+- launchApp:
+    clearState: true
+
+- runFlow:
+    when:
+      visible: "Allow While Using App"
+    commands:
+      - tapOn: "Allow While Using App"
+
+- runFlow:
+    when:
+      visible: "While using the app"
+    commands:
+      - tapOn: "While using the app"
+
+- assertVisible:
+    id: "safety-map"
+- assertVisible:
+    id: "map-view"
+- assertVisible:
+    id: "trip-plan-card"
+- assertVisible:
+    id: "trip-origin-input"
+- assertVisible:
+    id: "trip-destination-input"
+- assertVisible:
+    id: "trip-heatmap"
+
+- tapOn:
+    id: "trip-origin-input"
+- inputText: "Cape"
+
+- assertVisible:
+    id: "trip-origin-suggestion-0"
+- tapOn:
+    id: "trip-origin-suggestion-0"
+
+- tapOn:
+    id: "trip-destination-input"
+- inputText: "Wood"
+
+- assertVisible:
+    id: "trip-destination-suggestion-0"
+- tapOn:
+    id: "trip-destination-suggestion-0"
+
+- assertVisible:
+    id: "trip-pathway"

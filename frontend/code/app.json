@@ -1,9 +1,0 @@
-{
-  "expo": {
-    "name": "Travel Safe",
-    "slug": "travel-safe",
-    "version": "0.1.0",
-    "orientation": "portrait",
-    "userInterfaceStyle": "automatic"
-  }
-}

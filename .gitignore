@@ -2,7 +2,7 @@
 .DS_Store
 Thumbs.db
 Desktop.ini
-
+_frontend
 # Editors
 .vscode/*
 !.vscode/extensions.json
@@ -10,7 +10,9 @@ Desktop.ini
 *.swp
 *.swo
 *~
-
+keys
+assets
+*.zip
 # Root secrets
 /.env
 /.env.local
