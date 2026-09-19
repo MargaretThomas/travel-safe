@@ -5,6 +5,7 @@ import { buildClientTripPlan } from '@/lib/api/trip-fallback';
 import { createTrip, type TripPlan, type TripPoint } from '@/lib/api/trips';
 import type { PlaceSuggestion } from '@/lib/map/geocoding';
 import type { MapCoordinate } from '@/lib/map/map.types';
+import { applyRoadPathway } from '@/lib/map/road-directions';
 
 export type TripPlanStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -33,7 +34,10 @@ export function tripStatusMessage(status: TripPlanStatus): string | null {
   return null;
 }
 
-export function useTripPlan(planTrip: typeof createTrip = createTrip) {
+export function useTripPlan(
+  planTrip: typeof createTrip = createTrip,
+  snapToRoads: typeof applyRoadPathway = applyRoadPathway,
+) {
   const [origin, setOrigin] = useState<TripPoint | null>(null);
   const [destination, setDestination] = useState<TripPoint | null>(null);
   const [plan, setPlan] = useState<TripPlan | null>(null);
@@ -41,7 +45,6 @@ export function useTripPlan(planTrip: typeof createTrip = createTrip) {
   const originRef = useRef<TripPoint | null>(null);
   const destinationRef = useRef<TripPoint | null>(null);
   const requestIdRef = useRef(0);
-
   const requestPlan = useCallback(
     (nextOrigin: TripPoint, nextDestination: TripPoint) => {
       const requestId = ++requestIdRef.current;
@@ -51,19 +54,25 @@ export function useTripPlan(planTrip: typeof createTrip = createTrip) {
       void planTrip({
         origin: nextOrigin,
         destination: nextDestination,
+        profile: 'driving',
       })
+        .then((next) => snapToRoads(next))
         .then((next) => {
           if (requestIdRef.current !== requestId) return;
           setPlan(next);
           setStatus('ready');
         })
-        .catch(() => {
+        .catch(async () => {
           if (requestIdRef.current !== requestId) return;
-          setPlan(buildClientTripPlan(nextOrigin, nextDestination));
+          const fallback = await snapToRoads(
+            buildClientTripPlan(nextOrigin, nextDestination),
+          );
+          if (requestIdRef.current !== requestId) return;
+          setPlan(fallback);
           setStatus('error');
         });
     },
-    [planTrip],
+    [planTrip, snapToRoads],
   );
 
   const selectOrigin = useCallback(

@@ -89,49 +89,6 @@ export default function HomeScreen() {
         <MapStatusCard status={status} onRetry={retry} />
         {showLegend ? <SafetyLegend /> : null}
       </View>
-
-      <View style={styles.entries}>
-        <Pressable
-          testID="home-sos-entry"
-          accessibilityRole="button"
-          onPress={() => router.push('/emergency')}
-          style={styles.entryHitbox}>
-          {({ pressed }) => (
-            <ThemedView
-              type="backgroundSelected"
-              style={[styles.entry, pressed && styles.entryPressed]}>
-              <ThemedText type="smallBold" themeColor="brandText">
-                {strings.emergency.homeEntry.title}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {strings.emergency.homeEntry.body}
-              </ThemedText>
-              <ThemedText type="smallBold" themeColor="brandText" style={styles.cta}>
-                {strings.emergency.homeEntry.cta}
-              </ThemedText>
-            </ThemedView>
-          )}
-        </Pressable>
-        <Pressable
-          testID="home-trusted-contacts-entry"
-          accessibilityRole="button"
-          onPress={() => router.push('/trusted-contacts')}
-          style={styles.entryHitbox}>
-          {({ pressed }) => (
-            <ThemedView
-              type="backgroundSelected"
-              style={[styles.entry, pressed && styles.entryPressed]}>
-              <ThemedText type="smallBold">{strings.trustedContacts.homeEntry.title}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {strings.trustedContacts.homeEntry.body}
-              </ThemedText>
-              <ThemedText type="smallBold" themeColor="brandText" style={styles.cta}>
-                {strings.trustedContacts.homeEntry.cta}
-              </ThemedText>
-            </ThemedView>
-          )}
-        </Pressable>
-      </View>
     </View>
   );
 }

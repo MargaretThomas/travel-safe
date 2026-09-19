@@ -140,7 +140,7 @@ class MapSearchResponse(BaseModel):
 
 
 TripProfile = Literal["walking", "driving"]
-PathwayProvider = Literal["mapbox", "mock"]
+PathwayProvider = Literal["mapbox", "osrm", "mock"]
 
 
 class TripPoint(BaseModel):

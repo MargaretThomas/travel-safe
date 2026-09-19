@@ -23,30 +23,6 @@ export function ScreenShell({ title, subtitle, testID, footer, children }: Scree
   return (
     <ThemedView testID={testID} style={styles.root}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <View style={styles.header}>
-          <Pressable
-            testID="screen-back"
-            accessibilityRole="button"
-            accessibilityLabel={strings.trustedContacts.nav.back}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.backButton,
-              { backgroundColor: theme.backgroundElement },
-              pressed && styles.pressed,
-            ]}>
-            <ThemedText type="smallBold">←</ThemedText>
-          </Pressable>
-          <View style={styles.headerText}>
-            {title ? <ThemedText type="smallBold">{title}</ThemedText> : null}
-            {subtitle ? (
-              <ThemedText type="small" themeColor="textSecondary">
-                {subtitle}
-              </ThemedText>
-            ) : null}
-          </View>
-        </View>
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
