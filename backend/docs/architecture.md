@@ -28,6 +28,7 @@ Expo application.
 | `/api/v1/halo/{halo_id}` | GET | Public | Halo detail + aggregates |
 | `/api/v1/halo/{halo_id}/rating` | PUT | `X-Client-ID` | Idempotent rating/like/visit signal |
 | `/api/v1/halo/{halo_id}/rating-settings` | PUT | Submitter `X-Client-ID` | Demo rating enable/disable |
+| `/api/v1/trips` | POST | Public | Road-following pathway from Mapbox Directions or OSRM, plus national safety corridor heatmap |
 
 ## Access model
 
