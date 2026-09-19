@@ -4,7 +4,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import safety_router
+from src.api.routes import (
+    emergency_router,
+    halo_router,
+    location_groups_router,
+    routes_router,
+    safety_router,
+    search_router,
+)
 
 load_dotenv()
 
@@ -31,6 +38,11 @@ app.add_middleware(
 )
 
 app.include_router(safety_router)
+app.include_router(emergency_router)
+app.include_router(location_groups_router)
+app.include_router(search_router)
+app.include_router(routes_router)
+app.include_router(halo_router)
 
 
 @app.get("/health")
