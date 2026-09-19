@@ -1,5 +1,5 @@
+import { buildSafetyGrid, type SafetyZone } from '@/lib/safety-map';
 import type { HeatmapCell, TripPathway } from '@/lib/api/trips';
-import type { SafetyZone } from '@/lib/safety-map';
 
 export type GeoJsonPointFeature = {
   type: 'Feature';
@@ -34,13 +34,13 @@ export function heatmapCellsToGeoJSON(
 }
 
 export function safetyZonesToHeatmapCells(zones: readonly SafetyZone[]): HeatmapCell[] {
-  return zones.map((zone) => ({
-    id: `zone-${zone.id}`,
-    latitude: zone.latitude,
-    longitude: zone.longitude,
-    label: zone.name,
-    reported_crimes: Math.round(((100 - zone.safetyScore) / 100) * 400),
-    relative_intensity: Math.min(1, Math.max(0, (100 - zone.safetyScore) / 100)),
+  return buildSafetyGrid([...zones]).map((point) => ({
+    id: `zone-${point.id}`,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    label: 'Neighbourhood safety',
+    reported_crimes: Math.round(((100 - point.score) / 100) * 400),
+    relative_intensity: Math.min(1, Math.max(0, (100 - point.score) / 100)),
     resolution: 'precinct_aggregate',
     source_id: 'local-mock',
   }));

@@ -1,4 +1,4 @@
-import { getApiBaseUrl, getMapboxToken, trimEnv } from './config';
+import { defaultApiBaseUrl, getApiBaseUrl, getMapboxToken, trimEnv } from './config';
 
 describe('config', () => {
   it('trims env values', () => {
@@ -6,8 +6,10 @@ describe('config', () => {
     expect(trimEnv(undefined)).toBe('');
   });
 
-  it('uses the default API base URL when unset', () => {
-    expect(getApiBaseUrl({})).toBe('http://127.0.0.1:8000');
+  it('uses a platform-aware default API base URL when unset', () => {
+    expect(getApiBaseUrl({}, 'ios')).toBe('http://127.0.0.1:8000');
+    expect(getApiBaseUrl({}, 'android')).toBe('http://10.0.2.2:8000');
+    expect(defaultApiBaseUrl('web')).toBe('http://127.0.0.1:8000');
   });
 
   it('strips trailing slashes from the API base URL', () => {

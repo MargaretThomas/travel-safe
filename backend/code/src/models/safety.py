@@ -64,3 +64,33 @@ class SafetySignalResponse(BaseModel):
     period: str | None = None
     explanation: list[str]
     source_ids: list[str]
+
+
+TripProfile = Literal["walking", "driving"]
+PathwayProvider = Literal["mapbox", "mock"]
+
+
+class TripPoint(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    label: str | None = None
+
+
+class TripRequest(BaseModel):
+    origin: TripPoint
+    destination: TripPoint
+    profile: TripProfile = "walking"
+
+
+class Pathway(BaseModel):
+    coordinates: list[tuple[float, float]] = Field(min_length=2)
+    distance_meters: float = Field(ge=0)
+    duration_seconds: float = Field(ge=0)
+    provider: PathwayProvider
+
+
+class TripResponse(BaseModel):
+    origin: TripPoint
+    destination: TripPoint
+    pathway: Pathway
+    heatmap: HeatmapResponse

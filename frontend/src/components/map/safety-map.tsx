@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Mapbox from '@rnmapbox/maps';
+import * as Mapbox from '@rnmapbox/maps';
 
 import { MapMarker } from '@/components/map/map-marker';
 import { UserLocationMarker } from '@/components/map/user-location-marker';
@@ -40,33 +40,53 @@ const DEFAULT_REGION_LATITUDE = -33.9249;
 const DEFAULT_REGION_LONGITUDE = 18.4241;
 
 const HEATMAP_STYLE = {
-  heatmapWeight: ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
+  heatmapWeight: ['interpolate', ['linear'], ['get', 'weight'], 0, 0.2, 1, 1],
   heatmapIntensity: ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
   heatmapColor: [
     'interpolate',
     ['linear'],
     ['heatmap-density'],
     0,
-    'rgba(76,245,107,0)',
-    0.2,
+    'rgba(76,245,107,0.15)',
+    0.15,
     'rgba(76,245,107,0.55)',
-    0.5,
-    'rgba(245,184,0,0.7)',
-    0.85,
+    0.45,
+    'rgba(245,184,0,0.75)',
+    0.75,
     'rgba(229,44,45,0.85)',
     1,
     'rgba(229,44,45,1)',
   ],
-  heatmapRadius: ['interpolate', ['linear'], ['zoom'], 8, 12, 14, 28],
-  heatmapOpacity: 0.85,
-} as const;
+  heatmapRadius: ['interpolate', ['linear'], ['zoom'], 8, 24, 12, 48, 15, 72],
+  heatmapOpacity: 0.9,
+};
+
+const HEAT_CIRCLE_STYLE = {
+  circleColor: [
+    'interpolate',
+    ['linear'],
+    ['get', 'weight'],
+    0,
+    'rgba(76,245,107,0.45)',
+    0.5,
+    'rgba(245,184,0,0.55)',
+    1,
+    'rgba(229,44,45,0.6)',
+  ],
+  circleRadius: ['interpolate', ['linear'], ['zoom'], 10, 18, 13, 36, 16, 56],
+  circleOpacity: 0.7,
+  circleBlur: 0.6,
+  circlePitchAlignment: 'map',
+};
 
 const LINE_STYLE = {
   lineColor: '#007AFF',
-  lineWidth: 4,
+  lineWidth: 6,
   lineCap: 'round',
   lineJoin: 'round',
-} as const;
+};
+
+const STREET_STYLE_URL = 'mapbox://styles/mapbox/streets-v12';
 
 export function SafetyMap({
   style,
@@ -176,7 +196,7 @@ export function SafetyMap({
     <View testID="safety-map" style={[styles.container, style]}>
       <Mapbox.MapView
         style={styles.map}
-        styleURL={Mapbox.StyleURL.Street}
+        styleURL={Mapbox.StyleURL?.Street ?? STREET_STYLE_URL}
         compassEnabled
         scaleBarEnabled
         logoEnabled={false}
@@ -193,19 +213,32 @@ export function SafetyMap({
         />
 
         {heatmap.features.length > 0 ? (
-          <View testID="trip-heatmap" collapsable={false}>
-            <Mapbox.ShapeSource id="trip-heatmap-source" shape={heatmap}>
-              <Mapbox.HeatmapLayer id="trip-heatmap-layer" style={HEATMAP_STYLE} />
-            </Mapbox.ShapeSource>
-          </View>
+          <Mapbox.ShapeSource id="trip-heatmap-source" shape={heatmap} testID="trip-heatmap">
+            {Mapbox.HeatmapLayer ? (
+              <Mapbox.HeatmapLayer
+                id="trip-heatmap-layer"
+                sourceID="trip-heatmap-source"
+                style={HEATMAP_STYLE}
+              />
+            ) : null}
+            {Mapbox.CircleLayer ? (
+              <Mapbox.CircleLayer
+                id="trip-heatmap-circles"
+                sourceID="trip-heatmap-source"
+                style={HEAT_CIRCLE_STYLE}
+              />
+            ) : null}
+          </Mapbox.ShapeSource>
         ) : null}
 
         {pathway ? (
-          <View testID="trip-pathway" collapsable={false}>
-            <Mapbox.ShapeSource id="trip-pathway-source" shape={pathway}>
-              <Mapbox.LineLayer id="trip-pathway-layer" style={LINE_STYLE} />
-            </Mapbox.ShapeSource>
-          </View>
+          <Mapbox.ShapeSource id="trip-pathway-source" shape={pathway} testID="trip-pathway">
+            <Mapbox.LineLayer
+              id="trip-pathway-layer"
+              sourceID="trip-pathway-source"
+              style={LINE_STYLE}
+            />
+          </Mapbox.ShapeSource>
         ) : null}
 
         {polylines.map((polyline) => (

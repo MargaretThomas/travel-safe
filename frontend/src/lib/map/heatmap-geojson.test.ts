@@ -25,11 +25,10 @@ describe('heatmap geojson', () => {
     expect(geojson.features[0]?.properties.weight).toBe(0.5);
   });
 
-  it('maps safety zones into crime-intensity cells', () => {
+  it('maps safety zones into a dense crime-intensity grid', () => {
     const cells = safetyZonesToHeatmapCells(MOCK_SAFETY_ZONES);
-    expect(cells).toHaveLength(MOCK_SAFETY_ZONES.length);
-    const harbour = cells.find((cell) => cell.id === 'zone-harbour');
-    expect(harbour?.relative_intensity).toBeCloseTo((100 - 81) / 100);
+    expect(cells.length).toBeGreaterThan(MOCK_SAFETY_ZONES.length);
+    expect(cells.every((cell) => cell.relative_intensity >= 0 && cell.relative_intensity <= 1)).toBe(true);
   });
 
   it('converts a pathway into a line feature and map coordinates', () => {

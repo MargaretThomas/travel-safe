@@ -23,6 +23,7 @@ Update this table first whenever an endpoint changes so the frontend team has a 
 | `/api/v1/stats` | GET | `area_code` | Precinct-level reported-crime statistics + caveats |
 | `/api/v1/heatmap` | GET | `bbox=west,south,east,north&zoom=5..18` | Aggregate map cells; never fabricated incident pins |
 | `/api/v1/areas/{area_code}/safety` | GET | Path area code | Confidence-aware signal; may return `insufficient_data` |
+| `/api/v1/trips` | POST | `{ origin, destination, profile? }` — each point is `{ latitude, longitude, label? }`; `profile` is `walking` (default) or `driving` | Pathway polyline (`coordinates` as `[lng, lat]`), plus a corridor heatmap of mock crime-intensity cells in a padded origin–destination bbox. `pathway.provider` is `mapbox` when `MAPBOX_ACCESS_TOKEN` succeeds, otherwise `mock`. `422` if coordinates are invalid or origin and destination are the same place. |
 
 ## MVP data behavior
 
@@ -34,6 +35,7 @@ The first review branch contains one deterministic Woodstock reference fixture s
 - Data resolution remains whole police precinct.
 - The fixture is not a live SafeSuburb feed and must not be represented as one.
 - Heat-map centroids are area context only, not crime-event coordinates.
+- `POST /api/v1/trips` adds a padded corridor heatmap of mock crime-intensity cells (plus the Woodstock fixture when it falls in the box). Those cells are not live incident pins.
 - The API intentionally withholds a safety score until peer calibration, denominator quality and model validation are agreed.
 
 See [safety-data-sources.md](safety-data-sources.md) for source governance.

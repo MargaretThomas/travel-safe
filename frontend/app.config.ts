@@ -21,6 +21,7 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'makers.travel.safe',
+    usesCleartextTraffic: true,
   },
   plugins: [
     'expo-router',

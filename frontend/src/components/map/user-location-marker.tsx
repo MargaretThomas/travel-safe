@@ -1,4 +1,4 @@
-import Mapbox from '@rnmapbox/maps';
+import * as Mapbox from '@rnmapbox/maps';
 
 import { MapMarker } from '@/components/map/map-marker';
 import type { MapCoordinate } from '@/lib/map/map.types';

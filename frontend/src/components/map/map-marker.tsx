@@ -1,4 +1,4 @@
-import Mapbox from '@rnmapbox/maps';
+import * as Mapbox from '@rnmapbox/maps';
 import { View } from 'react-native';
 
 import type { MapMarker as MapMarkerModel } from '@/lib/map/map.types';
