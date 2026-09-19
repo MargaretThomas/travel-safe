@@ -1,12 +1,15 @@
-export function debounce(fn: () => void, waitMs: number): { call: () => void; cancel: () => void } {
+export function debounce<Args extends unknown[]>(
+  fn: (...args: Args) => void,
+  waitMs: number,
+): { call: (...args: Args) => void; cancel: () => void } {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {
-    call() {
+    call(...args: Args) {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         timer = null;
-        fn();
+        fn(...args);
       }, waitMs);
     },
     cancel() {

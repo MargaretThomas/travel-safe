@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
-import { createTrip, type TripPlan, type TripPoint } from '@/lib/api/trips';
-import { buildClientTripPlan } from '@/lib/api/trip-fallback';
 import { strings } from '@/i18n/strings';
+import { buildClientTripPlan } from '@/lib/api/trip-fallback';
+import { createTrip, type TripPlan, type TripPoint } from '@/lib/api/trips';
 import type { PlaceSuggestion } from '@/lib/map/geocoding';
 import type { MapCoordinate } from '@/lib/map/map.types';
 
@@ -38,40 +38,55 @@ export function useTripPlan(planTrip: typeof createTrip = createTrip) {
   const [destination, setDestination] = useState<TripPoint | null>(null);
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [status, setStatus] = useState<TripPlanStatus>('idle');
+  const originRef = useRef<TripPoint | null>(null);
+  const destinationRef = useRef<TripPoint | null>(null);
+  const requestIdRef = useRef(0);
 
-  const selectOrigin = useCallback((point: TripPoint) => {
-    setOrigin(point);
-  }, []);
-
-  const selectDestination = useCallback((point: TripPoint) => {
-    setDestination(point);
-  }, []);
-
-  useEffect(() => {
-    if (!origin || !destination) {
+  const requestPlan = useCallback(
+    (nextOrigin: TripPoint, nextDestination: TripPoint) => {
+      const requestId = ++requestIdRef.current;
       setPlan(null);
-      setStatus('idle');
-      return;
-    }
+      setStatus('loading');
 
-    let cancelled = false;
-    setStatus('loading');
-    void planTrip({ origin, destination })
-      .then((next) => {
-        if (cancelled) return;
-        setPlan(next);
-        setStatus('ready');
+      void planTrip({
+        origin: nextOrigin,
+        destination: nextDestination,
       })
-      .catch(() => {
-        if (cancelled) return;
-        setPlan(buildClientTripPlan(origin, destination));
-        setStatus('error');
-      });
+        .then((next) => {
+          if (requestIdRef.current !== requestId) return;
+          setPlan(next);
+          setStatus('ready');
+        })
+        .catch(() => {
+          if (requestIdRef.current !== requestId) return;
+          setPlan(buildClientTripPlan(nextOrigin, nextDestination));
+          setStatus('error');
+        });
+    },
+    [planTrip],
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [destination, origin, planTrip]);
+  const selectOrigin = useCallback(
+    (point: TripPoint) => {
+      originRef.current = point;
+      setOrigin(point);
+      if (destinationRef.current) {
+        requestPlan(point, destinationRef.current);
+      }
+    },
+    [requestPlan],
+  );
+
+  const selectDestination = useCallback(
+    (point: TripPoint) => {
+      destinationRef.current = point;
+      setDestination(point);
+      if (originRef.current) {
+        requestPlan(originRef.current, point);
+      }
+    },
+    [requestPlan],
+  );
 
   return {
     origin,

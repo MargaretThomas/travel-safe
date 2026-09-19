@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef } from 'react';
+import { useEffect, useMemo, useReducer } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -33,13 +33,10 @@ export function PlaceSearchField({
   debounceMs = 300,
 }: PlaceSearchFieldProps) {
   const [state, dispatch] = useReducer(reducePlaceSearch, INITIAL_PLACE_SEARCH);
-  const queryRef = useRef(state.query);
-  queryRef.current = state.query;
 
   const runSearch = useMemo(
     () =>
-      debounce(() => {
-        const query = queryRef.current;
+      debounce((query: string) => {
         if (!shouldSearchPlaces(query)) return;
         void search(query, { proximity })
           .then((suggestions) => dispatch({ type: 'results', suggestions }))
@@ -74,7 +71,6 @@ export function PlaceSearchField({
         autoCorrect={false}
         autoCapitalize="none"
         onChangeText={(query) => {
-          queryRef.current = query;
           dispatch({ type: 'query', query });
           if (debounceMs <= 0) {
             if (!shouldSearchPlaces(query)) return;
@@ -83,7 +79,7 @@ export function PlaceSearchField({
               .catch(() => dispatch({ type: 'failed' }));
             return;
           }
-          runSearch.call();
+          runSearch.call(query);
         }}
         style={styles.input}
       />
