@@ -19,7 +19,7 @@ export function suggestionToTripPoint(suggestion: PlaceSuggestion): TripPoint {
 
 export function currentLocationToTripPoint(
   coordinate: MapCoordinate,
-  label = strings.trip.currentLocationLabel,
+  label: string = strings.trip.currentLocationLabel,
 ): TripPoint {
   return {
     latitude: coordinate.latitude,

@@ -11,7 +11,7 @@ function findByTestID(root: ReturnType<typeof create>, testID: string) {
 describe('TripPlannerCard', () => {
   it('renders origin, destination and current-location action', () => {
     const onUseCurrentLocation = jest.fn();
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(
         <TripPlannerCard
@@ -34,7 +34,7 @@ describe('TripPlannerCard', () => {
   });
 
   it('hides the current-location action when GPS is unavailable', () => {
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(
         <TripPlannerCard

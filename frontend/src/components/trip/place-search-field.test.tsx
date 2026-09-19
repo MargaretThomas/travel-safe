@@ -27,7 +27,7 @@ describe('PlaceSearchField', () => {
   it('shows suggestions after a search and selects one', async () => {
     const search = jest.fn().mockResolvedValue([PLACE]);
     const onSelect = jest.fn();
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(
         <PlaceSearchField
@@ -60,7 +60,7 @@ describe('PlaceSearchField', () => {
 
   it('invokes the optional action control', () => {
     const onAction = jest.fn();
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(
         <PlaceSearchField

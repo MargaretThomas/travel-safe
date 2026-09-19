@@ -74,7 +74,7 @@ describe('useTripPlan helpers', () => {
 describe('useTripPlan', () => {
   it('requests a plan once origin and destination are set', async () => {
     const planTrip = jest.fn().mockResolvedValue(PLAN);
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(<Harness planTrip={planTrip} />);
     });

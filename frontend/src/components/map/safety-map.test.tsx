@@ -7,7 +7,7 @@ describe('SafetyMap', () => {
   it('renders the web fallback on web', () => {
     const original = Platform.OS;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'web' });
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(<SafetyMap />);
     });
@@ -19,7 +19,7 @@ describe('SafetyMap', () => {
   it('renders heatmap and pathway containers on native', () => {
     const original = Platform.OS;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' });
-    let renderer: ReturnType<typeof create>;
+    let renderer!: ReturnType<typeof create>;
     act(() => {
       renderer = create(
         <SafetyMap
