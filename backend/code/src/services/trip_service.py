@@ -1,5 +1,4 @@
 from src.models.safety import (
-    HeatmapCell,
     HeatmapResponse,
     Pathway,
     TripPoint,
@@ -7,30 +6,18 @@ from src.models.safety import (
     TripRequest,
     TripResponse,
 )
-from src.providers.base import CrimeDataProvider
 from src.providers.mapbox_directions import (
     MapboxDirectionsClient,
     MapboxDirectionsError,
 )
-from src.providers.reference import ReferenceCrimeProvider
 from src.services.geo import (
-    cell_relative_intensity,
-    heatmap_grid_points,
     mock_duration_seconds,
     mock_pathway_coordinates,
     pad_bbox,
     pathway_distance_meters,
-    point_in_bbox,
-    points_along_pathway,
     points_are_the_same,
 )
-from src.services.safety_service import WOODSTOCK_CENTROID
-
-HEATMAP_CAVEATS = [
-    "Cells represent aggregate precinct context, not crime-event pins.",
-    "Do not interpret cell centroids as incident locations.",
-    "Corridor heatmap is mock crime intensity for frontend integration until live SAPS ingestion.",
-]
+from src.services.safety_service import SafetyService
 
 
 class TripValidationError(ValueError):
@@ -40,11 +27,11 @@ class TripValidationError(ValueError):
 class TripService:
     def __init__(
         self,
-        provider: CrimeDataProvider | None = None,
         directions_client: MapboxDirectionsClient | None = None,
+        safety_service: SafetyService | None = None,
     ) -> None:
-        self.provider = provider or ReferenceCrimeProvider()
         self.directions = directions_client or MapboxDirectionsClient()
+        self.safety_service = safety_service or SafetyService()
 
     def plan(self, request: TripRequest) -> TripResponse:
         origin = request.origin
@@ -55,7 +42,9 @@ class TripService:
             destination.latitude,
             destination.longitude,
         ):
-            raise TripValidationError("origin and destination must be different locations")
+            raise TripValidationError(
+                "origin and destination must be different locations"
+            )
 
         bbox = pad_bbox(
             origin.latitude,
@@ -64,7 +53,7 @@ class TripService:
             destination.longitude,
         )
         pathway = self._pathway(origin, destination, request.profile)
-        heatmap = self._heatmap(bbox, pathway.coordinates)
+        heatmap = self._heatmap(bbox)
         return TripResponse(
             origin=origin,
             destination=destination,
@@ -114,50 +103,24 @@ class TripService:
     def _heatmap(
         self,
         bbox: tuple[float, float, float, float],
-        pathway_coordinates: list[tuple[float, float]],
     ) -> HeatmapResponse:
-        cells: list[HeatmapCell] = []
-        points = heatmap_grid_points(bbox) + [
-            point
-            for point in points_along_pathway(pathway_coordinates)
-            if point_in_bbox(point[0], point[1], bbox)
-        ]
-        for index, (latitude, longitude) in enumerate(points):
-            intensity = cell_relative_intensity(latitude, longitude)
-            cells.append(
-                HeatmapCell(
-                    id=f"corridor-cell-{index}",
-                    latitude=latitude,
-                    longitude=longitude,
-                    label="Mock corridor precinct",
-                    reported_crimes=round(intensity * 400),
-                    relative_intensity=round(intensity, 4),
-                    resolution="precinct_aggregate",
-                    source_id="mock-corridor",
-                )
-            )
-
-        woodstock_lat, woodstock_lng = WOODSTOCK_CENTROID
-        if point_in_bbox(woodstock_lat, woodstock_lng, bbox):
-            stats = self.provider.area_stats("woodstock")
-            if stats is not None:
-                cells.append(
-                    HeatmapCell(
-                        id="woodstock-precinct-reference",
-                        latitude=woodstock_lat,
-                        longitude=woodstock_lng,
-                        label=stats.area_name,
-                        reported_crimes=stats.total_reported_crimes,
-                        relative_intensity=1.0,
-                        resolution="precinct_aggregate",
-                        source_id=stats.source_id,
-                    )
-                )
-
-        return HeatmapResponse(
+        result = self.safety_service.heatmap(
             bbox=bbox,
             zoom=12,
-            cells=cells,
-            normalization="corridor-relative mock crime intensity",
-            caveats=HEATMAP_CAVEATS,
+            year=None,
+            limit=1500,
         )
+        if result is None:
+            return HeatmapResponse(
+                bbox=bbox,
+                zoom=12,
+                cells=[],
+                normalization=(
+                    "No national safety data available for this corridor."
+                ),
+                caveats=[
+                    "No route safety context is available for this corridor.",
+                    "Do not infer safety from an empty heatmap response.",
+                ],
+            )
+        return result

@@ -97,14 +97,17 @@ def test_create_trip_returns_mock_pathway_and_heatmap() -> None:
     assert body["pathway"]["provider"] == "mock"
     assert len(body["pathway"]["coordinates"]) >= 2
     assert body["pathway"]["distance_meters"] > 0
-    assert len(body["heatmap"]["cells"]) >= 36
+    assert len(body["heatmap"]["cells"]) >= 1
     west, south, east, north = body["heatmap"]["bbox"]
     for cell in body["heatmap"]["cells"]:
         assert west <= cell["longitude"] <= east
         assert south <= cell["latitude"] <= north
-        assert cell["resolution"] == "precinct_aggregate"
-    assert any(cell["id"] == "woodstock-precinct-reference" for cell in body["heatmap"]["cells"])
-    assert any("not crime-event pins" in caveat.lower() for caveat in body["heatmap"]["caveats"])
+    assert body["heatmap"]["source_id"] == "datafirst-saps-annual-v1.4"
+    assert body["heatmap"]["model_version"] == "danger-v1.1"
+    assert any(
+        "not incident pins" in caveat.lower()
+        for caveat in body["heatmap"]["caveats"]
+    )
 
 
 def test_create_trip_rejects_identical_origin_and_destination() -> None:
