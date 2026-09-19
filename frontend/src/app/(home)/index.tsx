@@ -11,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { TripPlannerCard } from '@/components/trip/trip-planner-card';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useMapLocation } from '@/hooks/use-map-location';
+import { useSafetyHeatmap } from '@/hooks/use-safety-heatmap';
 import {
   currentLocationToTripPoint,
   suggestionToTripPoint,
@@ -34,8 +35,10 @@ export default function HomeScreen() {
     [position],
   );
 
+  const defaultSafety = useSafetyHeatmap(liveLocation, fallbackHeatmap);
+
   const showLegend = status === 'ready' || status === 'inaccurate' || status === 'stale';
-  const heatmapCells = trip.plan?.heatmap.cells ?? fallbackHeatmap;
+  const heatmapCells = trip.plan?.heatmap.cells ?? defaultSafety.cells;
   const pathwayCoordinates = trip.plan?.pathway.coordinates ?? [];
 
   const tripMarkers = useMemo<MapMarker[]>(() => {
