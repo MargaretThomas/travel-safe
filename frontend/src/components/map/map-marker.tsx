@@ -25,9 +25,10 @@ export function MapMarker({ marker, accessibilityLabel, testID }: MapMarkerProps
       coordinate={[marker.coordinate.longitude, marker.coordinate.latitude]}
       title={marker.title}
       snippet={marker.description}
-      accessibilityLabel={label}
       testID={testID ?? `map-marker-${marker.id}`}>
       <View
+        accessible
+        accessibilityLabel={label}
         testID={`${testID ?? `map-marker-${marker.id}`}-pin`}
         style={{
           width: 16,

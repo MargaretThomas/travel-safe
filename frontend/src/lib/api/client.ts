@@ -11,8 +11,9 @@ export class ApiError extends Error {
 }
 
 export type ApiRequestOptions = {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
+  headers?: Record<string, string>;
   fetchImpl?: typeof fetch;
   baseUrl?: string;
 };
@@ -26,8 +27,11 @@ export function joinApiUrl(baseUrl: string, path: string): string {
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const url = joinApiUrl(options.baseUrl ?? getApiBaseUrl(), path);
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...options.headers,
+  };
+  if (options.body !== undefined && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 

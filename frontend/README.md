@@ -7,7 +7,7 @@ Built with Expo SDK 57, React Native 0.86 (New Architecture), React 19, and Type
 ## Features
 
 - **Trip planning** — search origin and destination (Mapbox Geocoding, with Cape Town mock suggestions when no token is set), or use current location as origin. The app calls `POST /api/v1/trips` and draws the pathway plus a crime heatmap along the corridor.
-- **Crime heatmap** — Mapbox `HeatmapLayer` from backend cells (or local mock zones until a trip is planned). Red is more dangerous, green is safer.
+- **Crime heatmap** — Mapbox `HeatmapLayer` from the backend DataFirst/SAPS safety cells. Local mock zones are fallback-only when the API is unavailable. Red indicates higher relative danger burden; green indicates lower relative danger burden.
 - **Live location** — foreground GPS via `expo-location` (`hooks/use-map-location.ts`) with a recoverable status card.
 - **Native maps** — `@rnmapbox/maps` behind `components/map/safety-map.tsx`. Native-only; web falls back to placeholder copy.
 
@@ -39,6 +39,24 @@ npx expo run:ios
 Mapbox requires a **development build** (`expo run:ios` / `expo run:android`), not Expo Go. Rebuild native projects after adding the Mapbox plugin.
 
 The API defaults to `http://127.0.0.1:8000`. Start the backend with `../backend/scripts/app.sh run`.
+
+### Backend API adapters
+
+Screens should not hard-code backend URLs. Use the typed helpers in `src/lib/api/`:
+
+| App capability | Frontend adapter | Backend endpoint(s) |
+|---|---|---|
+| Backend readiness | `health.ts` | `GET /health` |
+| Safety heatmap | `safety.ts` | `GET /api/v1/heatmap` |
+| Sources, dataset status, area stats/detail, station search | `safety-intelligence.ts` | `/sources`, `/dataset/status`, `/stats`, `/map/search`, `/areas/{area_code}/safety` |
+| Trip pathway + corridor context | `trips.ts` | `POST /api/v1/trips` |
+| Travel Safe internal search | `search.ts` | `GET /api/v1/search` |
+| Lower-risk comparison of real route candidates | `routes.ts` | `POST /api/v1/routes/analyse` |
+| Emergency numbers and mapped services | `emergency.ts` | `/emergency-numbers`, `/emergency/numbers`, `/emergency-services` |
+| Halo list/create/detail/rating/settings | `halo.ts` | `/halo` and `/halo/{id}/*` |
+| Temporary trusted-location groups | `location-groups.ts` | `/location-groups/*` |
+
+`api/client.ts` owns base-URL resolution, JSON handling, HTTP methods and custom headers. Halo writes use `X-Client-ID`; temporary location groups use `X-Group-Key`. External address geocoding remains a Mapbox/frontend concern; `GET /api/v1/search` searches Travel Safe-owned Halo and safety data.
 
 ### Scripts
 
@@ -74,6 +92,7 @@ Expo config lives in `app.config.ts`.
 
 ## Limitations
 
-- Corridor crime cells from the API are **mock intensity**, not live SAPS incident pins.
+- Safety cells are **annual police-station aggregates**, not live incident pins and not a guarantee of personal safety.
+- Safety/danger scores are comparative burden signals, not per-capita crime rates.
 - Place search falls back to a small Cape Town fixture list when Mapbox Geocoding is unavailable.
 - `@rnmapbox/maps` is **iOS/Android only**; the web target builds but the map screen does not render on web.

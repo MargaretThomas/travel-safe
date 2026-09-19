@@ -18,9 +18,39 @@ export type Halo = {
   location_label: string;
   latitude: number;
   longitude: number;
+  created_at?: string;
+  submitted_by?: string | null;
   source: string;
   caution: string;
   community: HaloCommunitySignal;
+};
+
+export type HaloCreateInput = {
+  name: string;
+  description: string;
+  location_label: string;
+  latitude: number;
+  longitude: number;
+  submitted_by?: string;
+  rating_enabled?: boolean;
+};
+
+export type HaloRatingInput = {
+  rating: number;
+  liked?: boolean;
+  visited?: boolean;
+  visit_latitude?: number;
+  visit_longitude?: number;
+};
+
+export type HaloRatingResponse = {
+  halo: Halo;
+  client_id: string;
+  rating: number;
+  liked: boolean;
+  visited: boolean;
+  proximity_verified: boolean;
+  updated_at: string;
 };
 
 export type HaloListResponse = {
@@ -41,6 +71,8 @@ export function parseHalo(value: unknown): Halo | null {
     location_label?: unknown;
     latitude?: unknown;
     longitude?: unknown;
+    created_at?: unknown;
+    submitted_by?: unknown;
     source?: unknown;
     caution?: unknown;
     community?: unknown;
@@ -77,6 +109,9 @@ export function parseHalo(value: unknown): Halo | null {
     location_label: candidate.location_label,
     latitude: candidate.latitude,
     longitude: candidate.longitude,
+    created_at: typeof candidate.created_at === 'string' ? candidate.created_at : undefined,
+    submitted_by:
+      typeof candidate.submitted_by === 'string' ? candidate.submitted_by : null,
     source: typeof candidate.source === 'string' ? candidate.source : 'unknown',
     caution:
       typeof candidate.caution === 'string'
@@ -116,4 +151,105 @@ export async function fetchHaloList(
         ? candidate.count
         : items.length,
   };
+}
+
+export async function fetchHaloListFiltered(
+  options: {
+    query?: string;
+    bbox?: [number, number, number, number];
+  } = {},
+  request: typeof apiRequest = apiRequest,
+): Promise<HaloListResponse> {
+  const query = new URLSearchParams();
+  if (options.query) query.set('q', options.query);
+  if (options.bbox) query.set('bbox', options.bbox.join(','));
+  const suffix = query.toString() ? '?' + query.toString() : '';
+
+  const payload = await request<unknown>('/api/v1/halo' + suffix);
+  if (payload == null || typeof payload !== 'object') {
+    throw new Error('Halo response was invalid');
+  }
+  const candidate = payload as { items?: unknown; count?: unknown };
+  if (!Array.isArray(candidate.items)) {
+    throw new Error('Halo response was invalid');
+  }
+  const items = candidate.items.map(parseHalo).filter((item): item is Halo => item != null);
+  return {
+    items,
+    count:
+      typeof candidate.count === 'number' && Number.isFinite(candidate.count)
+        ? candidate.count
+        : items.length,
+  };
+}
+
+export async function fetchHalo(
+  haloId: string,
+  request: typeof apiRequest = apiRequest,
+): Promise<Halo> {
+  const payload = await request<unknown>(
+    '/api/v1/halo/' + encodeURIComponent(haloId),
+  );
+  const halo = parseHalo(payload);
+  if (!halo) throw new Error('Halo response was invalid');
+  return halo;
+}
+
+export async function createHalo(
+  input: HaloCreateInput,
+  clientId: string,
+  request: typeof apiRequest = apiRequest,
+): Promise<Halo> {
+  const payload = await request<unknown>('/api/v1/halo', {
+    method: 'POST',
+    headers: { 'X-Client-ID': clientId },
+    body: {
+      ...input,
+      rating_enabled: input.rating_enabled ?? true,
+    },
+  });
+  const halo = parseHalo(payload);
+  if (!halo) throw new Error('Halo response was invalid');
+  return halo;
+}
+
+export async function rateHalo(
+  haloId: string,
+  input: HaloRatingInput,
+  clientId: string,
+  request: typeof apiRequest = apiRequest,
+): Promise<HaloRatingResponse> {
+  return request<HaloRatingResponse>(
+    '/api/v1/halo/' + encodeURIComponent(haloId) + '/rating',
+    {
+      method: 'PUT',
+      headers: { 'X-Client-ID': clientId },
+      body: {
+        rating: input.rating,
+        liked: input.liked ?? false,
+        visited: input.visited ?? false,
+        visit_latitude: input.visit_latitude,
+        visit_longitude: input.visit_longitude,
+      },
+    },
+  );
+}
+
+export async function setHaloRatingEnabled(
+  haloId: string,
+  enabled: boolean,
+  clientId: string,
+  request: typeof apiRequest = apiRequest,
+): Promise<Halo> {
+  const payload = await request<unknown>(
+    '/api/v1/halo/' + encodeURIComponent(haloId) + '/rating-settings',
+    {
+      method: 'PUT',
+      headers: { 'X-Client-ID': clientId },
+      body: { enabled },
+    },
+  );
+  const halo = parseHalo(payload);
+  if (!halo) throw new Error('Halo response was invalid');
+  return halo;
 }

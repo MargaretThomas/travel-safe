@@ -31,6 +31,34 @@ describe('api client', () => {
     );
   });
 
+  it('supports PUT requests and preserves custom backend headers', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+
+    await apiRequest('/api/v1/halo/example/rating', {
+      method: 'PUT',
+      headers: { 'X-Client-ID': 'client-123' },
+      body: { rating: 5 },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      baseUrl: 'http://example.test',
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'http://example.test/api/v1/halo/example/rating',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Client-ID': 'client-123',
+        }),
+        body: JSON.stringify({ rating: 5 }),
+      }),
+    );
+  });
+
   it('throws ApiError on non-OK responses', async () => {
     const fetchImpl = jest.fn().mockResolvedValue({
       ok: false,

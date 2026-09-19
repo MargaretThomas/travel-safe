@@ -39,7 +39,7 @@ const ZOOM_STEP = 1;
 const DEFAULT_REGION_LATITUDE = -33.9249;
 const DEFAULT_REGION_LONGITUDE = 18.4241;
 
-const HEATMAP_STYLE = {
+const HEATMAP_STYLE: Mapbox.HeatmapLayerStyle = {
   heatmapWeight: ['interpolate', ['linear'], ['get', 'weight'], 0, 0.2, 1, 1],
   heatmapIntensity: ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
   heatmapColor: [
@@ -61,7 +61,7 @@ const HEATMAP_STYLE = {
   heatmapOpacity: 0.9,
 };
 
-const HEAT_CIRCLE_STYLE = {
+const HEAT_CIRCLE_STYLE: Mapbox.CircleLayerStyle = {
   circleColor: [
     'interpolate',
     ['linear'],
@@ -79,7 +79,7 @@ const HEAT_CIRCLE_STYLE = {
   circlePitchAlignment: 'map',
 };
 
-const LINE_STYLE = {
+const LINE_STYLE: Mapbox.LineLayerStyle = {
   lineColor: '#007AFF',
   lineWidth: 6,
   lineCap: 'round',
@@ -214,20 +214,16 @@ export function SafetyMap({
 
         {heatmap.features.length > 0 ? (
           <Mapbox.ShapeSource id="trip-heatmap-source" shape={heatmap} testID="trip-heatmap">
-            {Mapbox.HeatmapLayer ? (
-              <Mapbox.HeatmapLayer
-                id="trip-heatmap-layer"
-                sourceID="trip-heatmap-source"
-                style={HEATMAP_STYLE}
-              />
-            ) : null}
-            {Mapbox.CircleLayer ? (
-              <Mapbox.CircleLayer
-                id="trip-heatmap-circles"
-                sourceID="trip-heatmap-source"
-                style={HEAT_CIRCLE_STYLE}
-              />
-            ) : null}
+            <Mapbox.HeatmapLayer
+              id="trip-heatmap-layer"
+              sourceID="trip-heatmap-source"
+              style={HEATMAP_STYLE}
+            />
+            <Mapbox.CircleLayer
+              id="trip-heatmap-circles"
+              sourceID="trip-heatmap-source"
+              style={HEAT_CIRCLE_STYLE}
+            />
           </Mapbox.ShapeSource>
         ) : null}
 
