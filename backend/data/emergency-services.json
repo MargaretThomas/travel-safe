@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "region": "Cape Town demo area",
+  "services": [
+    {
+      "id": "healthcare-groote-schuur",
+      "name": "Groote Schuur Hospital",
+      "service_type": "healthcare",
+      "latitude": -33.941111,
+      "longitude": 18.461667,
+      "phone_number": "+27214049111",
+      "source_name": "Western Cape Government",
+      "source_url": "https://www.westerncape.gov.za/health-wellness/facility/groote-schuur-hospital"
+    },
+    {
+      "id": "police-cape-town-central",
+      "name": "Cape Town Central Police Station",
+      "service_type": "police",
+      "latitude": -33.92774,
+      "longitude": 18.4231,
+      "phone_number": "10111",
+      "source_name": "South African Police Service / Western Cape emergency contacts",
+      "source_url": "https://www.westerncape.gov.za/know-who-you-can-call-emergency"
+    },
+    {
+      "id": "fire-roeland-street",
+      "name": "Roeland Street Fire Station",
+      "service_type": "fire",
+      "latitude": -33.933262,
+      "longitude": 18.424923,
+      "phone_number": "0214807700",
+      "source_name": "City of Cape Town",
+      "source_url": "https://www.capetown.gov.za/Family%20and%20home/See-all-city-facilities/Our-service-facilities/Fire%20stations/Roeland%20Street%20Fire%20Station"
+    },
+    {
+      "id": "mountain-rescue-table-mountain",
+      "name": "Wilderness Search & Rescue — Table Mountain response area",
+      "service_type": "mountain_rescue",
+      "latitude": -33.9628,
+      "longitude": 18.4098,
+      "phone_number": "0219370300",
+      "source_name": "Western Cape Government",
+      "source_url": "https://www.westerncape.gov.za/know-who-you-can-call-emergency",
+      "location_note": "Map anchor represents the Table Mountain response area, not a WSAR office."
+    }
+  ]
+}
