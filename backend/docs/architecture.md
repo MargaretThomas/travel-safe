@@ -18,6 +18,7 @@ Expo application.
 | `/api/v1/trips` | POST | Public | Route geometry plus validated safety heatmap for the trip corridor |
 | `/api/v1/routes/analyse` | POST | Public | Comparative lower-risk analysis for supplied real route alternatives |
 | `/api/v1/emergency-numbers` | GET | Public | Verified emergency picker numbers |
+| `/api/v1/emergency/numbers` | GET | Public | Coordinate-aware compatibility picker for police, fire and ambulance/City emergency numbers |
 | `/api/v1/emergency-services` | GET | Public | Checked-in emergency service map locations; optional `service_type` filter |
 | `/api/v1/location-groups` | POST | Public create | Demo group code + secret key |
 | `/api/v1/location-groups/{group_code}/join` | POST | `X-Group-Key` | Join temporary member |
