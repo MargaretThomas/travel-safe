@@ -14,7 +14,7 @@ incompatible contracts.
 | Halo rating/like | Halo card/detail | `PUT /api/v1/halo/{id}/rating` + `X-Client-ID` | Backend complete |
 | Halo rating enablement | Halo submitter/settings | `PUT /api/v1/halo/{id}/rating-settings` + `X-Client-ID` | Backend complete |
 | Emergency picker numbers | emergency-picker UI if retained | `GET /api/v1/emergency-numbers` | Backend complete; current SOS screen uses local SMS flow and does not require this endpoint |
-| Emergency service map locations | issue #5/map | `GET /api/v1/emergency-services` | #9 / Zoe — not yet merged |
+| Emergency service map locations | issue #5/map | `GET /api/v1/emergency-services` | #9 / Zoe — synchronized on PR #35; backend + tests ready |
 | Trusted contacts/location groups | optional live-sharing UI | create/join/publish/poll location-group endpoints + `X-Group-Key` | Backend complete demo API; current trusted contacts remain local SQLite by design |
 | Global in-app alerts | issue #3 | `GET /api/v1/notifications` | #10 / Zoe — not yet merged |
 | Unified internal search | issue #12 map search | `GET /api/v1/search?q=...` | Backend complete; searches Halo + station/municipality/district data |
@@ -33,7 +33,7 @@ incompatible contracts.
 3. Connect issue #5 emergency picker to PR #22's typed adapter.
 4. Agree the Halo rename with Zoe/Margaret and consume the canonical
    `/api/v1/halo` contract.
-5. Merge Zoe's emergency-service-location fixture when ready.
+5. Review/merge Zoe's synchronized emergency-service-location fixture from PR #35.
 
 ### Day-2 / stretch
 
