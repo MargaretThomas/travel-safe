@@ -49,6 +49,35 @@ describe('trips', () => {
     expect(parseHeatmapCell({ id: 'x' })).toBeNull();
   });
 
+  it('preserves official safety evidence on heatmap cells', () => {
+    const parsed = parseHeatmapCell({
+      ...SAMPLE.heatmap.cells[0],
+      source_id: 'datafirst-saps-annual-v1.4',
+      year: '2025/2026',
+      danger_score: 28,
+      safety_score: 72,
+      risk_band: 'green',
+      confidence: 0.9,
+      top_crimes: [
+        {
+          category: 'assault_gbh',
+          label: 'Assault GBH',
+          count: 120,
+          danger_weight: 0.75,
+          counts_toward_danger_score: true,
+        },
+      ],
+      quality_flags: ['partial_year_station'],
+    });
+
+    expect(parsed?.safety_score).toBe(72);
+    expect(parsed?.danger_score).toBe(28);
+    expect(parsed?.risk_band).toBe('green');
+    expect(parsed?.confidence).toBe(0.9);
+    expect(parsed?.top_crimes?.[0].label).toBe('Assault GBH');
+    expect(parsed?.quality_flags).toEqual(['partial_year_station']);
+  });
+
   it('parses a trip response', () => {
     const parsed = parseTripResponse(SAMPLE);
     expect(parsed?.pathway.coordinates).toHaveLength(2);

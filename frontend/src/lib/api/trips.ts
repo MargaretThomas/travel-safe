@@ -9,6 +9,17 @@ export type TripPoint = MapCoordinate & {
   label?: string;
 };
 
+export type RiskBand = 'green' | 'orange' | 'red';
+
+export type MapCrimeStat = {
+  category: string;
+  label: string;
+  count: number;
+  danger_weight?: number | null;
+  counts_toward_danger_score: boolean;
+  signal_note?: string | null;
+};
+
 export type HeatmapCell = {
   id: string;
   latitude: number;
@@ -18,6 +29,16 @@ export type HeatmapCell = {
   relative_intensity: number;
   resolution: string;
   source_id: string;
+  year?: string | null;
+  local_municipality?: string | null;
+  district_municipality?: string | null;
+  danger_score?: number | null;
+  safety_score?: number | null;
+  risk_band?: RiskBand | null;
+  color?: string | null;
+  confidence?: number | null;
+  top_crimes?: MapCrimeStat[];
+  quality_flags?: string[];
 };
 
 export type TripHeatmap = {
@@ -62,11 +83,16 @@ function isLngLatPair(value: unknown): value is [number, number] {
 export function parseTripPoint(value: unknown): TripPoint | null {
   if (value == null || typeof value !== 'object') return null;
   const candidate = value as { latitude?: unknown; longitude?: unknown; label?: unknown };
+  const label =
+    typeof candidate.label === 'string' && candidate.label.length > 0
+      ? candidate.label
+      : null;
   if (!isValidCoordinate(candidate)) return null;
-  const point: TripPoint = { latitude: candidate.latitude, longitude: candidate.longitude };
-  if (typeof candidate.label === 'string' && candidate.label.length > 0) {
-    point.label = candidate.label;
-  }
+  const point: TripPoint = {
+    latitude: candidate.latitude,
+    longitude: candidate.longitude,
+  };
+  if (label) point.label = label;
   return point;
 }
 
@@ -78,6 +104,37 @@ export function parseHeatmapCell(value: unknown): HeatmapCell | null {
   if (typeof candidate.relative_intensity !== 'number' || !Number.isFinite(candidate.relative_intensity)) {
     return null;
   }
+
+  const topCrimes = Array.isArray(candidate.top_crimes)
+    ? candidate.top_crimes
+        .filter(
+          (item): item is MapCrimeStat =>
+            item != null &&
+            typeof item === 'object' &&
+            typeof item.category === 'string' &&
+            typeof item.label === 'string' &&
+            typeof item.count === 'number' &&
+            Number.isFinite(item.count) &&
+            typeof item.counts_toward_danger_score === 'boolean',
+        )
+        .map((item) => ({
+          category: item.category,
+          label: item.label,
+          count: Math.max(0, item.count),
+          danger_weight:
+            typeof item.danger_weight === 'number' && Number.isFinite(item.danger_weight)
+              ? item.danger_weight
+              : null,
+          counts_toward_danger_score: item.counts_toward_danger_score,
+          signal_note: typeof item.signal_note === 'string' ? item.signal_note : null,
+        }))
+    : [];
+
+  const score = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value)
+      ? Math.min(100, Math.max(0, value))
+      : null;
+
   return {
     id: candidate.id,
     latitude: candidate.latitude,
@@ -87,6 +144,28 @@ export function parseHeatmapCell(value: unknown): HeatmapCell | null {
     relative_intensity: Math.min(1, Math.max(0, candidate.relative_intensity)),
     resolution: typeof candidate.resolution === 'string' ? candidate.resolution : 'precinct_aggregate',
     source_id: typeof candidate.source_id === 'string' ? candidate.source_id : 'unknown',
+    year: typeof candidate.year === 'string' ? candidate.year : null,
+    local_municipality:
+      typeof candidate.local_municipality === 'string' ? candidate.local_municipality : null,
+    district_municipality:
+      typeof candidate.district_municipality === 'string' ? candidate.district_municipality : null,
+    danger_score: score(candidate.danger_score),
+    safety_score: score(candidate.safety_score),
+    risk_band:
+      candidate.risk_band === 'green' ||
+      candidate.risk_band === 'orange' ||
+      candidate.risk_band === 'red'
+        ? candidate.risk_band
+        : null,
+    color: typeof candidate.color === 'string' ? candidate.color : null,
+    confidence:
+      typeof candidate.confidence === 'number' && Number.isFinite(candidate.confidence)
+        ? Math.min(1, Math.max(0, candidate.confidence))
+        : null,
+    top_crimes: topCrimes,
+    quality_flags: Array.isArray(candidate.quality_flags)
+      ? candidate.quality_flags.filter((item): item is string => typeof item === 'string')
+      : [],
   };
 }
 
