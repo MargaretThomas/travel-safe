@@ -1,49 +1,70 @@
+import json
+from pathlib import Path
+from typing import Annotated, Literal
+
 from fastapi import APIRouter, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-router = APIRouter(prefix="/api/v1/emergency", tags=["emergency-services"])
+EmergencyServiceType = Literal[
+    "healthcare",
+    "police",
+    "fire",
+    "mountain_rescue",
+]
 
-# Rough City of Cape Town metro bounding box: west, south, east, north.
-CAPE_TOWN_BBOX = (18.30, -34.36, 18.85, -33.45)
+router = APIRouter(prefix="/api/v1", tags=["emergency-services"])
 
-
-class EmergencyNumber(BaseModel):
-    label: str
-    number: str
-
-
-class EmergencyNumbersResponse(BaseModel):
-    in_cape_town: bool
-    police: EmergencyNumber
-    fire: EmergencyNumber
-    hospital: EmergencyNumber
+_DATA_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "data"
+    / "emergency-services.json"
+)
 
 
-def in_cape_town(lat: float, lon: float) -> bool:
-    west, south, east, north = CAPE_TOWN_BBOX
-    return west <= lon <= east and south <= lat <= north
+class EmergencyService(BaseModel):
+    id: str
+    name: str
+    service_type: EmergencyServiceType
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    phone_number: str | None = None
+    source_name: str
+    source_url: str
+    location_note: str | None = None
 
 
-@router.get("/numbers", response_model=EmergencyNumbersResponse)
-def get_numbers(
-    lat: float = Query(..., ge=-90, le=90),
-    lon: float = Query(..., ge=-180, le=180),
-) -> EmergencyNumbersResponse:
-    local = in_cape_town(lat, lon)
-    hospital = (
-        EmergencyNumber(label="City of Cape Town Emergency Services", number="021 480 7700")
-        if local
-        else EmergencyNumber(label="Ambulance", number="10177")
+class EmergencyServicesResponse(BaseModel):
+    region: str
+    services: list[EmergencyService]
+
+
+def _load_services() -> EmergencyServicesResponse:
+    payload = json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    return EmergencyServicesResponse(
+        region=str(payload["region"]),
+        services=[
+            EmergencyService.model_validate(item)
+            for item in payload["services"]
+        ],
     )
 
-    return EmergencyNumbersResponse(
-        in_cape_town=local,
-        police=EmergencyNumber(label="SAPS Flying Squad", number="10111"),
-        fire=EmergencyNumber(label="National emergency number", number="112"),
-        hospital=hospital,
-    )
 
-""" takes the phone's live location, checks whether it's inside Cape Town, 
-and returns the number for each icon: police (10111) and fire (112) are always the same, 
-hospital is the Cape Town number (021 480 7700) or the national ambulance number (10177) elsewhere.
-"""
+@router.get(
+    "/emergency-services",
+    response_model=EmergencyServicesResponse,
+)
+def get_emergency_services(
+    service_type: Annotated[EmergencyServiceType | None, Query()] = None,
+) -> EmergencyServicesResponse:
+    response = _load_services()
+    if service_type is None:
+        return response
+
+    return EmergencyServicesResponse(
+        region=response.region,
+        services=[
+            service
+            for service in response.services
+            if service.service_type == service_type
+        ],
+    )
