@@ -1,0 +1,39 @@
+appId: makers.travel.safe
+---
+# Explore tab: every tab renders, and the ranked safety overview is visible.
+
+- launchApp:
+    clearState: true
+
+# First launch requests location for the safety map; accept it.
+- runFlow:
+    when:
+      visible: "Allow While Using App"
+    commands:
+      - tapOn: "Allow While Using App"
+
+# The tab bar exposes all three screens.
+- assertVisible:
+    id: "safety-map"
+- assertVisible:
+    text: "Maps"
+- assertVisible:
+    text: "Emergency"
+- assertVisible:
+    text: "Explore"
+
+# Switch to the Explore tab and verify the ranked safety list.
+- tapOn:
+    text: "Explore"
+- assertVisible:
+    id: "explore-screen"
+- assertVisible:
+    id: "explore-zone-bayview"
+- assertVisible:
+    id: "explore-zone-city-bowl"
+
+# The Emergency tab is reachable from the same tab bar.
+- tapOn:
+    text: "Emergency"
+- assertVisible:
+    id: "emergency-screen"

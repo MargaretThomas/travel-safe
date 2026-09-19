@@ -57,6 +57,10 @@ export const MOCK_SAFETY_ZONES: SafetyZone[] = [
   { id: 'bayview', name: 'Bayview', latitude: -33.9516, longitude: 18.3825, safetyScore: 91 },
 ];
 
+export function rankSafetyZones(zones: SafetyZone[] = MOCK_SAFETY_ZONES): SafetyZone[] {
+  return [...zones].sort((a, b) => b.safetyScore - a.safetyScore);
+}
+
 export type RegionBounds = {
   minLat: number;
   maxLat: number;

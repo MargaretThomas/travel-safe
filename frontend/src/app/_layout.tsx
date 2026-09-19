@@ -17,7 +17,6 @@ function RootNavigator() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(home)" />
-      <Stack.Screen name="emergency" />
       <Stack.Screen name="trusted-contacts" />
       <Stack.Screen name="trusted-contacts/onboarding" />
       <Stack.Screen name="trusted-contacts/add" />
@@ -67,17 +66,17 @@ export default function RootLayout() {
   }
 
   return (
-  <Suspense fallback={<ActivityIndicator size="large" />}>
-    <SQLiteProvider
-      databaseName={DATABASE_NAME}
-      options={{ enableChangeListener: true }}
-      useSuspense
-    >
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AnimatedSplashOverlay />
-        <RootNavigator />
-      </ThemeProvider>
-    </SQLiteProvider>
+    <Suspense fallback={<ActivityIndicator size="large" />}>
+      <SQLiteProvider
+        databaseName={DATABASE_NAME}
+        options={{ enableChangeListener: true }}
+        useSuspense
+      >
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AnimatedSplashOverlay />
+          <RootNavigator />
+        </ThemeProvider>
+      </SQLiteProvider>
     </Suspense>
   );
 }

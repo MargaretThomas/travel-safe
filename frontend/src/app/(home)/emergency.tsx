@@ -90,7 +90,7 @@ export default function EmergencyScreen() {
 
   const handleDone = () => {
     reset();
-    router.back();
+    router.navigate('/');
   };
 
   return (

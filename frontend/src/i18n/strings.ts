@@ -1,5 +1,10 @@
 export const strings = {
   appName: 'Travel Safe',
+  tabs: {
+    maps: 'Maps',
+    emergency: 'Emergency',
+    explore: 'Explore',
+  },
   safetyMap: {
     headerTitle: 'Safety Map',
     headerSubtitle: 'Neighbourhood safety heatmap',
@@ -42,6 +47,12 @@ export const strings = {
   fallback: {
     title: 'Interactive map unavailable',
     body: 'The safety heatmap is available in the iOS and Android apps.',
+  },
+  explore: {
+    title: 'Explore',
+    subtitle: 'Neighbourhood safety at a glance',
+    rankTitle: 'Safety by area',
+    scoreLabel: 'Score',
   },
   trustedContacts: {
     nav: {

@@ -5,6 +5,7 @@ import {
   GRID_ROWS,
   HEAT_CIRCLE_ALPHA,
   MOCK_SAFETY_ZONES,
+  rankSafetyZones,
   regionBounds,
   regionCenter,
   safetyColorForScore,
@@ -101,5 +102,24 @@ describe('safetyHexForScore', () => {
     [100, '#4cf56b'],
   ])('formats score %d as a hex color', (score, expected) => {
     expect(safetyHexForScore(score)).toBe(expected);
+  });
+});
+
+describe('rankSafetyZones', () => {
+  it('sorts zones by safety score from highest to lowest', () => {
+    const ranked = rankSafetyZones();
+    for (let i = 1; i < ranked.length; i++) {
+      expect(ranked[i - 1].safetyScore).toBeGreaterThanOrEqual(ranked[i].safetyScore);
+    }
+  });
+
+  it('returns an empty list for empty input', () => {
+    expect(rankSafetyZones([])).toEqual([]);
+  });
+
+  it('does not mutate the input array', () => {
+    const before = [...MOCK_SAFETY_ZONES];
+    rankSafetyZones(before);
+    expect(before).toEqual(MOCK_SAFETY_ZONES);
   });
 });
