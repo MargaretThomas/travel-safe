@@ -54,7 +54,7 @@ export const MOCK_SAFETY_ZONES: SafetyZone[] = [
   { id: 'station', name: 'Station Quarter', latitude: -33.9216, longitude: 18.4266, safetyScore: 49 },
   { id: 'parkside', name: 'Parkside', latitude: -33.9483, longitude: 18.4415, safetyScore: 71 },
   { id: 'gardens', name: 'Gardens', latitude: -33.9349, longitude: 18.4143, safetyScore: 58 },
-  { id: 'bayview', name: 'Bayview', latitude: -33.9516, longitude: 18.3825, safetyScore: 91 },
+  { id: 'bayview', name: 'Bayview', latitude: -33.9516, longitude: 18.3825, safetyScore: 93 },
 ];
 
 export function rankSafetyZones(zones: SafetyZone[] = MOCK_SAFETY_ZONES): SafetyZone[] {
