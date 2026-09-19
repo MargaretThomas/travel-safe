@@ -12,6 +12,20 @@ export type NativeMapHandle = {
   ) => void;
 };
 
+export type MapboxCameraHandle = {
+  setCamera?: (config: {
+    centerCoordinate?: [number, number];
+    zoomLevel?: number;
+    animationDuration?: number;
+  }) => void;
+  fitBounds?: (
+    ne: [number, number],
+    sw: [number, number],
+    padding?: number | number[],
+    duration?: number,
+  ) => void;
+};
+
 export type MapCommandResult = 'ok' | 'unavailable';
 
 export type FitToOptions = {
@@ -61,3 +75,61 @@ export const createMapController: MapControllerFactory = (handle) => ({
     return 'ok';
   },
 });
+
+export function paddingFromEdge(
+  edgePadding?: { top: number; right: number; bottom: number; left: number },
+): number | number[] {
+  if (!edgePadding) return 48;
+  return [edgePadding.top, edgePadding.right, edgePadding.bottom, edgePadding.left];
+}
+
+export function boundsFromCoordinates(coordinates: readonly MapCoordinate[]): {
+  ne: [number, number];
+  sw: [number, number];
+} | null {
+  const points = coordinates.filter((coordinate) => isValidCoordinate(coordinate));
+  if (points.length === 0) return null;
+  const lats = points.map((point) => point.latitude);
+  const lngs = points.map((point) => point.longitude);
+  return {
+    ne: [Math.max(...lngs), Math.max(...lats)],
+    sw: [Math.min(...lngs), Math.min(...lats)],
+  };
+}
+
+export function createMapboxNativeHandle(camera: MapboxCameraHandle | null | undefined): NativeMapHandle {
+  let lastCenter: MapCoordinate = { latitude: -33.9249, longitude: 18.4241 };
+  let lastZoom = 12;
+
+  return {
+    animateToRegion(region, durationMs = 300) {
+      lastCenter = { latitude: region.latitude, longitude: region.longitude };
+      lastZoom = zoomForLatitudeDelta(region.latitudeDelta);
+      camera?.setCamera?.({
+        centerCoordinate: [region.longitude, region.latitude],
+        zoomLevel: lastZoom,
+        animationDuration: durationMs,
+      });
+    },
+    animateCamera(nextCamera, options) {
+      lastCenter = nextCamera.center;
+      lastZoom = nextCamera.zoom;
+      camera?.setCamera?.({
+        centerCoordinate: [nextCamera.center.longitude, nextCamera.center.latitude],
+        zoomLevel: nextCamera.zoom,
+        animationDuration: options?.duration ?? 300,
+      });
+    },
+    getCamera: async () => ({ center: lastCenter, zoom: lastZoom }),
+    fitToCoordinates(coordinates, options) {
+      const bounds = boundsFromCoordinates(coordinates);
+      if (!bounds) return;
+      camera?.fitBounds?.(
+        bounds.ne,
+        bounds.sw,
+        paddingFromEdge(options?.edgePadding),
+        options?.animated === false ? 0 : 400,
+      );
+    },
+  };
+}

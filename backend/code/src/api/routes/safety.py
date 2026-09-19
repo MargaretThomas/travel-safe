@@ -7,11 +7,15 @@ from src.models.safety import (
     HeatmapResponse,
     MapSearchResponse,
     SafetySignalResponse,
+    TripRequest,
+    TripResponse,
 )
 from src.services.safety_service import SafetyService
+from src.services.trip_service import TripService, TripValidationError
 
 router = APIRouter(prefix="/api/v1", tags=["safety-intelligence"])
 service = SafetyService()
+trip_service = TripService()
 
 
 def parse_bbox(raw: str) -> tuple[float, float, float, float]:
@@ -95,3 +99,11 @@ def get_safety_signal(
     if signal is None:
         raise HTTPException(status_code=404, detail="Area data not available")
     return signal
+
+
+@router.post("/trips", response_model=TripResponse)
+def create_trip(payload: TripRequest) -> TripResponse:
+    try:
+        return trip_service.plan(payload)
+    except TripValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc

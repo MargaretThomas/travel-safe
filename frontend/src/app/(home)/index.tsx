@@ -8,25 +8,26 @@ import { SafetyMap } from '@/components/map/safety-map';
 import { SafetyLegend } from '@/components/safety-legend';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TripPlannerCard } from '@/components/trip/trip-planner-card';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useMapLocation } from '@/hooks/use-map-location';
+import {
+  currentLocationToTripPoint,
+  suggestionToTripPoint,
+  useTripPlan,
+} from '@/hooks/use-trip-plan';
 import { strings } from '@/i18n/strings';
 import type { LivePosition } from '@/lib/location';
-import type { MapCircle } from '@/lib/map/map.types';
-import { buildHeatCircles, MOCK_SAFETY_ZONES } from '@/lib/safety-map';
+import { safetyZonesToHeatmapCells } from '@/lib/map/heatmap-geojson';
+import type { MapMarker } from '@/lib/map/map.types';
+import { MOCK_SAFETY_ZONES } from '@/lib/safety-map';
 
-const heatCircles: MapCircle[] = buildHeatCircles(MOCK_SAFETY_ZONES).map((circle) => ({
-  id: circle.id,
-  center: circle.center,
-  radiusMeters: circle.radius,
-  fillColor: circle.color,
-  strokeColor: 'transparent',
-  strokeWidth: 0,
-}));
+const fallbackHeatmap = safetyZonesToHeatmapCells(MOCK_SAFETY_ZONES);
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { position, accuracyMeters, status, retry } = useMapLocation();
+  const trip = useTripPlan();
 
   const liveLocation = useMemo<LivePosition | null>(
     () => (position ? { latitude: position.latitude, longitude: position.longitude } : null),
@@ -34,16 +35,54 @@ export default function HomeScreen() {
   );
 
   const showLegend = status === 'ready' || status === 'inaccurate' || status === 'stale';
+  const heatmapCells = trip.plan?.heatmap.cells ?? fallbackHeatmap;
+  const pathwayCoordinates = trip.plan?.pathway.coordinates ?? [];
+
+  const tripMarkers = useMemo<MapMarker[]>(() => {
+    const markers: MapMarker[] = [];
+    if (trip.origin) {
+      markers.push({
+        id: 'trip-origin',
+        coordinate: { latitude: trip.origin.latitude, longitude: trip.origin.longitude },
+        kind: 'generic',
+        title: trip.origin.label ?? strings.trip.originLabel,
+        color: '#0a2010',
+      });
+    }
+    if (trip.destination) {
+      markers.push({
+        id: 'trip-destination',
+        coordinate: { latitude: trip.destination.latitude, longitude: trip.destination.longitude },
+        kind: 'generic',
+        title: trip.destination.label ?? strings.trip.destinationLabel,
+        color: '#e5484d',
+      });
+    }
+    return markers;
+  }, [trip.destination, trip.origin]);
 
   return (
     <View style={styles.container}>
       <SafetyMap
         liveLocation={liveLocation}
         accuracyMeters={accuracyMeters}
-        circles={heatCircles}
+        heatmapCells={heatmapCells}
+        pathwayCoordinates={pathwayCoordinates}
+        markers={tripMarkers}
+        followUser={!trip.plan}
       />
 
       <View style={[styles.overlay, { top: insets.top + Spacing.two }]} pointerEvents="box-none">
+        <TripPlannerCard
+          proximity={liveLocation}
+          canUseCurrentLocation={Boolean(liveLocation)}
+          statusMessage={trip.statusMessage}
+          onSelectOrigin={(place) => trip.selectOrigin(suggestionToTripPoint(place))}
+          onSelectDestination={(place) => trip.selectDestination(suggestionToTripPoint(place))}
+          onUseCurrentLocation={() => {
+            if (liveLocation) trip.selectOrigin(currentLocationToTripPoint(liveLocation));
+          }}
+        />
         <MapStatusCard status={status} onRetry={retry} />
         {showLegend ? <SafetyLegend /> : null}
       </View>

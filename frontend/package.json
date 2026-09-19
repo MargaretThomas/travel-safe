@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.19",
+    "@rnmapbox/maps": "^10.3.5",
     "babel-plugin-inline-import": "^3.0.0",
     "drizzle-orm": "^1.0.0-rc.4",
     "expo": "~57.0.24",
@@ -60,6 +61,7 @@
   "jest": {
     "preset": "jest-expo",
     "moduleNameMapper": {
+      "^@rnmapbox/maps$": "<rootDir>/src/test/rnmapbox-maps.mock.js",
       "^@/assets/(.*)$": "<rootDir>/assets/$1",
       "^@/(.*)$": "<rootDir>/src/$1"
     }

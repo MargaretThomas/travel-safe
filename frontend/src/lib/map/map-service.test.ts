@@ -1,4 +1,10 @@
-import { createMapController, type NativeMapHandle } from './map-service';
+import {
+  boundsFromCoordinates,
+  createMapboxNativeHandle,
+  createMapController,
+  paddingFromEdge,
+  type NativeMapHandle,
+} from './map-service';
 import { latitudeDeltaForZoom, longitudeDeltaForZoom, zoomForLatitudeDelta, DEFAULT_LATITUDE_DELTA } from './regions';
 
 function makeNativeHandle(): {
@@ -130,6 +136,46 @@ describe('createMapController', () => {
     it('reports unavailable when the native method is missing', () => {
       const controller = createMapController({});
       expect(controller.fitToCoordinates([{ latitude: -33.9, longitude: 18.4 }])).toBe('unavailable');
+    });
+  });
+});
+
+describe('createMapboxNativeHandle', () => {
+  it('maps region animation onto the Mapbox camera', async () => {
+    const setCamera = jest.fn();
+    const fitBounds = jest.fn();
+    const handle = createMapboxNativeHandle({ setCamera, fitBounds });
+    handle.animateToRegion?.(REGION, 250);
+    expect(setCamera).toHaveBeenCalledWith(
+      expect.objectContaining({
+        centerCoordinate: [18.4, -33.9],
+        animationDuration: 250,
+      }),
+    );
+    const camera = await handle.getCamera?.();
+    expect(camera?.center).toEqual({ latitude: -33.9, longitude: 18.4 });
+  });
+
+  it('fits bounds from coordinates', () => {
+    const fitBounds = jest.fn();
+    const handle = createMapboxNativeHandle({ fitBounds });
+    handle.fitToCoordinates?.(
+      [
+        { latitude: -33.9, longitude: 18.4 },
+        { latitude: -33.95, longitude: 18.45 },
+      ],
+      { edgePadding: { top: 10, right: 20, bottom: 30, left: 40 } },
+    );
+    expect(fitBounds).toHaveBeenCalledWith([18.45, -33.9], [18.4, -33.95], [10, 20, 30, 40], 400);
+  });
+
+  it('computes padding and bounds helpers', () => {
+    expect(paddingFromEdge()).toBe(48);
+    expect(paddingFromEdge({ top: 1, right: 2, bottom: 3, left: 4 })).toEqual([1, 2, 3, 4]);
+    expect(boundsFromCoordinates([])).toBeNull();
+    expect(boundsFromCoordinates([{ latitude: -33.9, longitude: 18.4 }])).toEqual({
+      ne: [18.4, -33.9],
+      sw: [18.4, -33.9],
     });
   });
 });

@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import MapView, { Circle, Polyline } from 'react-native-maps';
+import * as Mapbox from '@rnmapbox/maps';
 
 import { MapMarker } from '@/components/map/map-marker';
 import { UserLocationMarker } from '@/components/map/user-location-marker';
 import { Spacing } from '@/constants/theme';
 import { strings } from '@/i18n/strings';
+import type { HeatmapCell } from '@/lib/api/trips';
 import type { LivePosition } from '@/lib/location';
 import { metersBetween } from '@/lib/location';
-import { createMapController, type NativeMapHandle } from '@/lib/map/map-service';
-import type { MapCircle, MapMarker as MapMarkerModel, MapPolyline, MapRegion } from '@/lib/map/map.types';
-import { defaultRegionForCoordinate, regionForCamera, regionForCoordinates } from '@/lib/map/regions';
+import {
+  heatmapCellsToGeoJSON,
+  pathwayCoordinatesToMap,
+  pathwayToLineGeoJSON,
+} from '@/lib/map/heatmap-geojson';
+import { createMapboxNativeHandle, createMapController, type MapboxCameraHandle } from '@/lib/map/map-service';
+import type { MapMarker as MapMarkerModel, MapPolyline, MapRegion } from '@/lib/map/map.types';
+import { defaultRegionForCoordinate, regionForCamera } from '@/lib/map/regions';
 
 export type SafetyMapProps = {
   style?: StyleProp<ViewStyle>;
@@ -18,7 +24,8 @@ export type SafetyMapProps = {
   accuracyMeters?: number | null;
   region?: MapRegion | null;
   markers?: readonly MapMarkerModel[];
-  circles?: readonly MapCircle[];
+  heatmapCells?: readonly HeatmapCell[];
+  pathwayCoordinates?: readonly [number, number][];
   polylines?: readonly MapPolyline[];
   followUser?: boolean;
   controls?: boolean;
@@ -32,13 +39,63 @@ const ZOOM_STEP = 1;
 const DEFAULT_REGION_LATITUDE = -33.9249;
 const DEFAULT_REGION_LONGITUDE = 18.4241;
 
+const HEATMAP_STYLE = {
+  heatmapWeight: ['interpolate', ['linear'], ['get', 'weight'], 0, 0.2, 1, 1],
+  heatmapIntensity: ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
+  heatmapColor: [
+    'interpolate',
+    ['linear'],
+    ['heatmap-density'],
+    0,
+    'rgba(76,245,107,0.15)',
+    0.15,
+    'rgba(76,245,107,0.55)',
+    0.45,
+    'rgba(245,184,0,0.75)',
+    0.75,
+    'rgba(229,44,45,0.85)',
+    1,
+    'rgba(229,44,45,1)',
+  ],
+  heatmapRadius: ['interpolate', ['linear'], ['zoom'], 8, 24, 12, 48, 15, 72],
+  heatmapOpacity: 0.9,
+};
+
+const HEAT_CIRCLE_STYLE = {
+  circleColor: [
+    'interpolate',
+    ['linear'],
+    ['get', 'weight'],
+    0,
+    'rgba(76,245,107,0.45)',
+    0.5,
+    'rgba(245,184,0,0.55)',
+    1,
+    'rgba(229,44,45,0.6)',
+  ],
+  circleRadius: ['interpolate', ['linear'], ['zoom'], 10, 18, 13, 36, 16, 56],
+  circleOpacity: 0.7,
+  circleBlur: 0.6,
+  circlePitchAlignment: 'map',
+};
+
+const LINE_STYLE = {
+  lineColor: '#007AFF',
+  lineWidth: 6,
+  lineCap: 'round',
+  lineJoin: 'round',
+};
+
+const STREET_STYLE_URL = 'mapbox://styles/mapbox/streets-v12';
+
 export function SafetyMap({
   style,
   liveLocation,
   accuracyMeters,
   region,
   markers = [],
-  circles = [],
+  heatmapCells = [],
+  pathwayCoordinates = [],
   polylines = [],
   followUser = true,
   controls = true,
@@ -50,17 +107,15 @@ export function SafetyMap({
 
   const initialRegion = useMemo(() => {
     if (region) return region;
-    const fromCircles = regionForCoordinates(circles.map((circle) => circle.center));
-    if (fromCircles) return fromCircles;
     if (liveLocation) return defaultRegionForCoordinate(liveLocation, { latitudeDelta: 0.05, longitudeDelta: 0.07 });
     return defaultRegionForCoordinate(
       { latitude: DEFAULT_REGION_LATITUDE, longitude: DEFAULT_REGION_LONGITUDE },
       { latitudeDelta: 0.1, longitudeDelta: 0.15 },
     );
-  }, [circles, liveLocation, region]);
+  }, [liveLocation, region]);
 
-  const attachMapRef = useCallback((node: MapView | null) => {
-    controllerRef.current = createMapController(node as unknown as NativeMapHandle | null);
+  const attachCameraRef = useCallback((node: unknown) => {
+    controllerRef.current = createMapController(createMapboxNativeHandle(node as MapboxCameraHandle | null));
   }, []);
 
   const handleMapReady = useCallback(() => {
@@ -99,6 +154,13 @@ export function SafetyMap({
     controllerRef.current.animateToRegion(region);
   }, [isMapReady, region]);
 
+  useEffect(() => {
+    if (!isMapReady || pathwayCoordinates.length < 2) return;
+    controllerRef.current.fitToCoordinates(pathwayCoordinatesToMap(pathwayCoordinates), {
+      edgePadding: { top: 120, right: 48, bottom: 220, left: 48 },
+    });
+  }, [isMapReady, pathwayCoordinates]);
+
   const handleZoomBy = useCallback(
     (deltaZoom: number) => {
       const anchor =
@@ -110,6 +172,12 @@ export function SafetyMap({
 
   const handleZoomIn = useCallback(() => handleZoomBy(ZOOM_STEP), [handleZoomBy]);
   const handleZoomOut = useCallback(() => handleZoomBy(-ZOOM_STEP), [handleZoomBy]);
+
+  const heatmap = useMemo(() => heatmapCellsToGeoJSON(heatmapCells), [heatmapCells]);
+  const pathway = useMemo(
+    () => (pathwayCoordinates.length >= 2 ? pathwayToLineGeoJSON({ coordinates: [...pathwayCoordinates] }) : null),
+    [pathwayCoordinates],
+  );
 
   if (Platform.OS === 'web') {
     return (
@@ -126,43 +194,65 @@ export function SafetyMap({
 
   return (
     <View testID="safety-map" style={[styles.container, style]}>
-      <MapView
-        ref={attachMapRef}
+      <Mapbox.MapView
         style={styles.map}
-        initialRegion={initialRegion}
-        mapType="standard"
-        showsCompass
-        showsScale
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        zoomEnabled
-        scrollEnabled
-        rotateEnabled
-        pitchEnabled
-        loadingEnabled
-        onMapReady={handleMapReady}
+        styleURL={Mapbox.StyleURL?.Street ?? STREET_STYLE_URL}
+        compassEnabled
+        scaleBarEnabled
+        logoEnabled={false}
+        attributionEnabled
+        onDidFinishLoadingMap={handleMapReady}
         accessibilityLabel={strings.safetyMap.headerTitle}
         testID="map-view">
-        {circles.map((circle) => (
-          <Circle
-            key={circle.id}
-            testID={`map-circle-${circle.id}`}
-            center={circle.center}
-            radius={circle.radiusMeters}
-            fillColor={circle.fillColor}
-            strokeColor={circle.strokeColor}
-            strokeWidth={circle.strokeWidth ?? 1}
-          />
-        ))}
+        <Mapbox.Camera
+          ref={attachCameraRef}
+          defaultSettings={{
+            centerCoordinate: [initialRegion.longitude, initialRegion.latitude],
+            zoomLevel: 12,
+          }}
+        />
+
+        {heatmap.features.length > 0 ? (
+          <Mapbox.ShapeSource id="trip-heatmap-source" shape={heatmap} testID="trip-heatmap">
+            {Mapbox.HeatmapLayer ? (
+              <Mapbox.HeatmapLayer
+                id="trip-heatmap-layer"
+                sourceID="trip-heatmap-source"
+                style={HEATMAP_STYLE}
+              />
+            ) : null}
+            {Mapbox.CircleLayer ? (
+              <Mapbox.CircleLayer
+                id="trip-heatmap-circles"
+                sourceID="trip-heatmap-source"
+                style={HEAT_CIRCLE_STYLE}
+              />
+            ) : null}
+          </Mapbox.ShapeSource>
+        ) : null}
+
+        {pathway ? (
+          <Mapbox.ShapeSource id="trip-pathway-source" shape={pathway} testID="trip-pathway">
+            <Mapbox.LineLayer
+              id="trip-pathway-layer"
+              sourceID="trip-pathway-source"
+              style={LINE_STYLE}
+            />
+          </Mapbox.ShapeSource>
+        ) : null}
 
         {polylines.map((polyline) => (
-          <Polyline
+          <Mapbox.ShapeSource
             key={polyline.id}
-            testID={`map-polyline-${polyline.id}`}
-            coordinates={polyline.coordinates}
-            strokeColor={polyline.color}
-            strokeWidth={polyline.width ?? 3}
-          />
+            id={`polyline-${polyline.id}`}
+            shape={pathwayToLineGeoJSON({
+              coordinates: polyline.coordinates.map((point) => [point.longitude, point.latitude]),
+            }, polyline.id)}>
+            <Mapbox.LineLayer
+              id={`polyline-layer-${polyline.id}`}
+              style={{ ...LINE_STYLE, lineColor: polyline.color ?? '#007AFF', lineWidth: polyline.width ?? 4 }}
+            />
+          </Mapbox.ShapeSource>
         ))}
 
         {markers.map((marker) => (
@@ -177,7 +267,7 @@ export function SafetyMap({
             testID={USER_MARKER_ID}
           />
         ) : null}
-      </MapView>
+      </Mapbox.MapView>
 
       {controls ? (
         <View style={styles.controls} pointerEvents="box-none">

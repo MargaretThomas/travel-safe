@@ -21,6 +21,7 @@ const config: ExpoConfig = {
     },
     predictiveBackGestureEnabled: false,
     package: 'makers.travel.safe',
+    usesCleartextTraffic: true,
   },
   plugins: [
     'expo-router',
@@ -50,6 +51,12 @@ const config: ExpoConfig = {
       'expo-location',
       {
         locationWhenInUsePermission: 'Allow $(PRODUCT_NAME) to use your location',
+      },
+    ],
+    [
+      '@rnmapbox/maps',
+      {
+        RNMapboxMapsDownloadToken: process.env.RNMAPBOX_MAPS_DOWNLOAD_TOKEN,
       },
     ],
     [
