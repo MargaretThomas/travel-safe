@@ -39,20 +39,12 @@ To re-pair later (e.g. after logging out), stop the bot, delete `store.db` and `
 
 ## Configuration
 
-<<<<<<< HEAD
-| Variable             | Description                                                    | Default     |
-| -------------------- | -------------------------------------------------------------- | ----------- |
-| `HOST`               | Interface to bind. Keep on loopback.                            | `127.0.0.1` |
-| `PORT`               | HTTP port to listen on                                          | `8080`      |
-| `WHATSAPP_BOT_TOKEN` | Required bearer token for `POST /send`. Startup fails if unset.  | —           |
-=======
 | Variable             | Description                                                    | Default       |
 | -------------------- | -------------------------------------------------------------- | ------------- |
 | `HOST`               | Interface to bind. Keep on loopback.                            | `127.0.0.1`   |
 | `PORT`               | HTTP port to listen on                                          | `8080`        |
 | `WHATSAPP_BOT_TOKEN` | Required bearer token for `POST /send`. Startup fails if unset.  | —             |
 | `PUSH_NAME`          | Name the phone shows for this linked device                     | `travel-safe` |
->>>>>>> ce30bd172f132ae5fd093a6045dad5cf4e1f435e
 
 ## API
 
