@@ -143,12 +143,35 @@ def add_contact(payload: ContactPayload, db: Db, now: Now, settings: AppSettings
     return contacts.add_contact(db, user_id, contact, now, settings)
 
 
-def _test_alert_error_code(failure: str | None) -> str:
+def _test_alert_error(failure: str | None) -> tuple[str, str]:
+    """Maps a send failure to (error code, message) for the test-alert rehearsal.
+
+    The message has to name the right culprit: telling someone to re-check their
+    phone number when the gateway rejected our own credentials sends them off to
+    fix something that is not broken.
+    """
+    if failure == "whatsapp_unauthorized":
+        return (
+            "whatsapp_unauthorized",
+            "The WhatsApp gateway rejected this service's credentials. Ask the person who set up "
+            "Travel Safe to check that the shared token matches on both sides.",
+        )
     if failure in (None, "", "channel_not_configured"):
-        return "whatsapp_not_configured"
+        return (
+            "whatsapp_not_configured",
+            "WhatsApp alerts are not set up on this server yet. Ask the person who set up "
+            "Travel Safe to configure the WhatsApp gateway.",
+        )
     if failure == "whatsapp_not_connected":
-        return "whatsapp_not_connected"
-    return "whatsapp_test_failed"
+        return (
+            "whatsapp_not_connected",
+            "The WhatsApp gateway isn't linked to a phone yet. Ask the person who set up "
+            "Travel Safe to pair it, then try again.",
+        )
+    return (
+        "whatsapp_test_failed",
+        "We couldn't send a test alert to this number. Check the number and try again.",
+    )
 
 
 @router.post("/contacts/test-message")
@@ -169,10 +192,7 @@ def test_contact_message(payload: ContactPayload, messaging: Messaging, db: Db, 
     user_name = profiles.get_profile(db, user_id)["name"]
     result = messaging.send_whatsapp(to=contact.phone, body=alert_test_text(user_name, contact.name))
     if not result.ok:
-        raise ServiceUnavailableError(
-            _test_alert_error_code(result.error),
-            "We couldn't send a test alert to this number. Check the number and try again.",
-        )
+        raise ServiceUnavailableError(*_test_alert_error(result.error))
     return {"sent": True, "message_id": result.provider_message_id}
 
 

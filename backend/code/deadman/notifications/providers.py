@@ -91,6 +91,11 @@ class WhatsAppBotMessagingProvider:
         if status == 503:
             # The gateway is not connected to WhatsApp (no paired device).
             return SendResult(ok=False, error="whatsapp_not_connected", retryable=False)
+        if status == 401:
+            # Our WHATSAPP_BOT_TOKEN does not match the gateway's. That is a server
+            # misconfiguration, not a problem with the recipient, and retrying
+            # cannot fix it, so name it rather than reporting a bare status.
+            return SendResult(ok=False, error="whatsapp_unauthorized", retryable=False)
         retryable = status == 429 or status >= 500
         return SendResult(ok=False, error=f"http_{status}", retryable=retryable)
 

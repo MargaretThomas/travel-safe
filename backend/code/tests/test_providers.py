@@ -115,6 +115,12 @@ def test_whatsapp_bot_503_means_not_connected_and_is_not_retried():
     assert not result.ok and result.error == "whatsapp_not_connected" and result.retryable is False
 
 
+def test_whatsapp_bot_401_means_our_token_is_wrong_and_is_not_retried():
+    provider = _bot(lambda _r: httpx.Response(401, json={"ok": False, "error": "unauthorized"}))
+    result = provider.send_whatsapp(to="+27821234567", body="b")
+    assert not result.ok and result.error == "whatsapp_unauthorized" and result.retryable is False
+
+
 @pytest.mark.parametrize("status", [429, 500, 502])
 def test_whatsapp_bot_transient_errors_are_retryable(status):
     provider = _bot(lambda _r: httpx.Response(status, json={}))

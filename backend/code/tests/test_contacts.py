@@ -133,6 +133,7 @@ def test_test_alert_sends_and_does_not_save(client, register, messaging, whatsap
     ("failure", "code"),
     [
         (SendResult(ok=False, error="whatsapp_not_connected", retryable=False), "whatsapp_not_connected"),
+        (SendResult(ok=False, error="whatsapp_unauthorized", retryable=False), "whatsapp_unauthorized"),
         (SendResult(ok=False, error="http_500", retryable=True), "whatsapp_test_failed"),
         (SendResult(ok=False, error=None, retryable=False), "whatsapp_not_configured"),
     ],
@@ -148,6 +149,21 @@ def test_test_alert_failure_is_reported(client, register, messaging, failure, co
     assert response.status_code == 503
     assert response.json()["error"]["code"] == code
     assert client.get("/api/v1/contacts", headers=account.headers).json()["contacts"] == []
+
+
+def test_test_alert_does_not_blame_the_number_when_our_token_is_wrong(client, register, messaging):
+    """A token mismatch is the server's fault; saying otherwise sends the user to
+    re-check a phone number that is probably fine."""
+    messaging.whatsapp_result = SendResult(ok=False, error="whatsapp_unauthorized", retryable=False)
+    account = register()
+    response = client.post(
+        "/api/v1/contacts/test-message",
+        json={"name": "Sipho", "phone": "+27821234567", "whatsapp": True},
+        headers=account.headers,
+    )
+    message = response.json()["error"]["message"]
+    assert "shared token" in message
+    assert "Check the number" not in message
 
 
 @pytest.mark.parametrize(

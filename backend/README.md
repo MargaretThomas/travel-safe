@@ -6,6 +6,37 @@ detects missed deadlines and notifies emergency contacts.
 
 ## Run
 
+The quickest path, which sets up both services and keeps them consistent with each other:
+
+```bash
+cd backend
+scripts/dev.sh setup     # venv, dependencies, .env files, shared WhatsApp token
+scripts/dev.sh run       # pair the gateway, then run the API and worker
+```
+
+`run` starts the WhatsApp gateway first and waits for you to scan its QR code before it
+starts the API and the worker, so the app is never accepting check-ins that nobody can
+be alerted about. The QR is drawn in the terminal and also written to
+`whatsapp/qr.png`, which is opened for you. It is re-issued about once a minute, so
+keep the phone handy. If the codes run out the gateway is restarted and a fresh one is
+shown; after `WAIT_SECONDS` (5 minutes) it gives up and starts anyway rather than
+leaving you with nothing running.
+
+Pass `--no-wait` to skip the wait, set `WAIT_SECONDS` to change it, and note that a
+non-interactive run (CI, a deploy) skips the wait entirely unless you set `WAIT_SECONDS`
+explicitly — so it cannot hang waiting for a phone.
+
+`setup` is safe to re-run. It creates missing `.env` files from `.env.example` and keeps the
+WhatsApp token shared between `code/.env` and `whatsapp/.env` in step, because a mismatch there
+shows up as a `401` on every send rather than as anything obvious.
+
+Other commands: `test` (ruff, pytest, gofmt, go vet), `build`, `doctor` (check the wiring
+without sending anything), `token` (rotate the shared secret), `pair` (re-pair the gateway from a
+fresh QR code). The worker is not optional: the API only records check-ins, so nothing is alerted
+until the worker notices a missed deadline.
+
+To run the services by hand instead:
+
 ```bash
 cd backend/code
 python3 -m venv .venv
@@ -19,12 +50,21 @@ python -m deadman.worker                 # worker loop (every DEADMAN_WORKER_INT
 python -m deadman.worker --once          # single pass, e.g. from cron
 ```
 
+The WhatsApp gateway in `backend/whatsapp` is a separate Go service; see its own README.
+
 Run the API and the worker as separate processes. Every worker job is idempotent, so running it
 twice, or running two workers by mistake, never sends duplicate alerts.
 
 ## Tests
 
 ```bash
+scripts/dev.sh test       # from backend/
+```
+
+or directly:
+
+```bash
+cd backend/code
 pip install ruff pytest
 ruff check .
 pytest -v
