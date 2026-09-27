@@ -3,7 +3,8 @@ import json
 import httpx
 import pytest
 
-from deadman.config import Settings
+from deadman import config
+from deadman.config import Settings, read_env_file
 from deadman.geocoding import MapboxGeocoder
 from deadman.notifications.providers import (
     ResendEmailProvider,
@@ -177,3 +178,48 @@ def test_settings_from_env():
     assert settings.whatsapp_bot_url == "http://bot.local/"
     assert settings.whatsapp_bot_token == "token"
     assert "secret" not in repr(Settings(resend_api_key="secret", whatsapp_bot_token="secret"))
+
+
+def test_read_env_file_parses_without_evaluating_shell_syntax(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text(
+        "# a comment\n"
+        "\n"
+        "DEADMAN_DB_PATH=travel.db\n"
+        'RESEND_FROM_EMAIL="Deadman Switch <alerts@example.com>"\n'
+        "export WHATSAPP_BOT_TOKEN=abc123\n"
+        "WHATSAPP_BOT_URL=http://127.0.0.1:8001   \n"
+        "RESEND_API_KEY=\n"
+        "not an assignment\n"
+    )
+    values = read_env_file(env)
+    assert values == {
+        "DEADMAN_DB_PATH": "travel.db",
+        "RESEND_FROM_EMAIL": "Deadman Switch <alerts@example.com>",
+        "WHATSAPP_BOT_TOKEN": "abc123",
+        "WHATSAPP_BOT_URL": "http://127.0.0.1:8001",
+        "RESEND_API_KEY": "",
+    }
+
+
+def test_read_env_file_tolerates_a_missing_file(tmp_path):
+    assert read_env_file(tmp_path / "absent.env") == {}
+
+
+def test_from_env_falls_back_to_the_env_file(tmp_path, monkeypatch):
+    env = tmp_path / ".env"
+    env.write_text("DEADMAN_DB_PATH=travel.db\nWHATSAPP_BOT_URL=http://127.0.0.1:8001\n")
+    monkeypatch.setattr(config, "ENV_FILE", env)
+    monkeypatch.delenv("DEADMAN_DB_PATH", raising=False)
+    monkeypatch.delenv("WHATSAPP_BOT_URL", raising=False)
+    settings = Settings.from_env()
+    assert settings.db_path == "travel.db"
+    assert settings.whatsapp_bot_url == "http://127.0.0.1:8001"
+
+
+def test_from_env_lets_the_environment_win_over_the_env_file(tmp_path, monkeypatch):
+    env = tmp_path / ".env"
+    env.write_text("DEADMAN_DB_PATH=travel.db\n")
+    monkeypatch.setattr(config, "ENV_FILE", env)
+    monkeypatch.setenv("DEADMAN_DB_PATH", "from-environment.db")
+    assert Settings.from_env().db_path == "from-environment.db"
