@@ -270,6 +270,19 @@ wait_for_gateway() { # url
   return 1
 }
 
+# A gateway that reconnects to a stored session needs a second or two to log in after it
+# answers /health, so a single check right after startup reports "not paired" for a session
+# that is perfectly fine. Give it a moment before telling the operator to re-pair, which
+# would unlink a working device.
+settle_paired() { # url seconds
+  local url=$1 seconds=$2 i
+  for ((i = 0; i < seconds * 5; i++)); do
+    gateway_is_paired "$url" && return 0
+    sleep 0.2
+  done
+  return 1
+}
+
 # Whether the gateway reports a paired device. Whitespace is stripped before matching:
 # comparing the raw JSON text would silently stop working if the gateway's encoder ever
 # padded its output, and the symptom would be an unexplained five-minute wait followed by
@@ -389,8 +402,12 @@ cmd_run() {
       warn "continuing without pairing: every alert will fail with whatsapp_not_connected."
       warn "scan $WA/qr.png (or run 'scripts/dev.sh pair') and the next worker pass will deliver."
     fi
-  elif ! gateway_is_paired "$url"; then
-    warn "not paired yet: open $WA/qr.png and scan it, or run 'scripts/dev.sh pair'."
+  elif ! settle_paired "$url" 5; then
+    if [[ -f $WA/qr.png ]]; then
+      warn "not paired yet: open $WA/qr.png and scan it, or run 'scripts/dev.sh pair'."
+    else
+      warn "not paired and there is no QR to scan: run 'scripts/dev.sh pair' to re-pair this device."
+    fi
   fi
 
   log "api      -> http://$API_HOST:$API_PORT (logs: $LOGS/api.log)"

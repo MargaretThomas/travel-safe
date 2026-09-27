@@ -3,6 +3,7 @@
 store.db
 store.db-shm
 store.db-wal
+store.db-journal
 
 # Pairing artefact, written on first run and removed on successful pairing.
 qr.png

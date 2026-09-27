@@ -1,9 +1,48 @@
 from __future__ import annotations
 
+import logging
 import os
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$")
+
+
+def read_env_file(path: Path | None = None) -> dict[str, str]:
+    """Parse a .env file the way scripts/dev.sh parses it: read, never evaluated, so a
+    value containing < or > stays a value instead of becoming a shell redirect.
+
+    The API and the worker are started by hand as often as by `scripts/dev.sh run`, and
+    from_env reads the process environment. Without this the .env is simply absent when
+    uvicorn is launched directly: the app still starts, silently takes every default
+    (no gateway, a different database, no email), and each of those misconfigurations
+    surfaces much later as a failed alert rather than at startup.
+    """
+    path = path or ENV_FILE
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return {}
+    values: dict[str, str] = {}
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        match = _ASSIGNMENT.match(line)
+        if match is None:
+            continue
+        value = match.group(2).rstrip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        values[match.group(1)] = value
+    return values
 
 
 def _optional(env: Mapping[str, str], key: str) -> str | None:
@@ -48,7 +87,16 @@ class Settings:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
-        env = os.environ if env is None else env
+        if env is None:
+            # Variables already exported into the process win over the file, so a
+            # container or a systemd unit can override .env without editing it.
+            env = {**read_env_file(), **os.environ}
+            if not env.get("WHATSAPP_BOT_URL", "").strip():
+                logger.warning(
+                    "WHATSAPP_BOT_URL is not set (no %s, nothing in the environment): phone "
+                    "notifications will fail with whatsapp_not_configured.",
+                    ENV_FILE.name,
+                )
         origins = tuple(
             origin.strip() for origin in env.get("DEADMAN_CORS_ORIGINS", "").split(",") if origin.strip()
         )
