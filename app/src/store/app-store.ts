@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 
-import type { AuthSession } from '@/lib/api/auth-session';
+import { AuthFailedError, type AuthSession } from '@/lib/api/auth-session';
 import type { DeadmanApi, DeviceState, FullStatus, LocationSample } from '@/lib/api/deadman-api';
 import type { PendingCheckIn } from '@/lib/check-in-queue';
 import { performCheckIn, type CheckInOutcome } from '@/lib/check-in-service';
@@ -67,6 +67,7 @@ export type AppState = PersistedState & {
   contactsError: SyncError | null;
 
   hydrate: () => Promise<void>;
+  verifyAccount: () => Promise<void>;
   register: (name: string) => Promise<void>;
   updateName: (name: string) => Promise<void>;
   setIntervalDays: (days: number) => Promise<void>;
@@ -77,6 +78,7 @@ export type AppState = PersistedState & {
   addContact: (contact: NormalizedContact) => Promise<EmergencyContact>;
   updateContact: (id: string, contact: NormalizedContact) => Promise<EmergencyContact>;
   removeContact: (id: string) => Promise<void>;
+  verifyContactPhone: (contact: NormalizedContact) => Promise<void>;
   updateSecurity: (patch: Partial<SecuritySettings>) => Promise<void>;
   setJourneySharing: (enabled: boolean) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -145,6 +147,29 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
           deps.session.hasCredentials().catch(() => false),
         ]);
         set({ ...INITIAL_PERSISTED, ...saved, registered, hydrated: true });
+        if (registered) await get().verifyAccount();
+      },
+
+      /**
+       * `hasCredentials` only checks the keychain, so credentials the server no longer
+       * recognises look healthy forever: every request 401s, the retry cascade in
+       * AuthSession ends in AuthFailedError, and nothing ever resets. That is a dead
+       * end for the user, because `register` also short-circuits on `registered`. So
+       * confirm the account once per launch and fall back to onboarding when it is gone.
+       *
+       * Only an auth failure resets. A network or server error leaves local state alone,
+       * so being offline can never cost the user their contacts or pending check-ins.
+       */
+      async verifyAccount() {
+        try {
+          await deps.api.getProfile();
+        } catch (error) {
+          if (!(error instanceof AuthFailedError)) return;
+          await deps.reminders.cancel().catch(() => undefined);
+          await deps.session.clear();
+          await deps.store.remove(APP_STATE_KEY);
+          set({ ...INITIAL_PERSISTED, registered: false, syncError: null, contactsError: null });
+        }
       },
 
       async register(name) {
@@ -256,6 +281,10 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
         const updated = await deps.api.updateContact(id, contact);
         await update({ contacts: get().contacts.map((item) => (item.id === id ? updated : item)) });
         return updated;
+      },
+
+      async verifyContactPhone(contact) {
+        await deps.api.testContactMessage(contact);
       },
 
       async removeContact(id) {

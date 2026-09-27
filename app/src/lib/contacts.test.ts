@@ -3,6 +3,7 @@ import {
   draftFromContact,
   EMPTY_DRAFT,
   nameFromContact,
+  needsPhoneTestAlert,
   normalizeEmail,
   normalizePhone,
   pickBestPhone,
@@ -110,5 +111,28 @@ describe('contact helpers', () => {
     expect(nameFromContact({ givenName: 'Thandi', familyName: 'Mokoena' })).toBe('Thandi Mokoena');
     expect(nameFromContact({ company: 'Acme' })).toBe('Acme');
     expect(nameFromContact({})).toBe('');
+  });
+});
+
+describe('phone test alert gate', () => {
+  const saved = { name: 'Sipho', email: null, phone: '+27821234567', whatsapp: false, id: 'c1', created_at: '', updated_at: '' };
+
+  it('gates a new number whether or not WhatsApp is ticked', () => {
+    expect(needsPhoneTestAlert({ name: 'Sipho', email: null, phone: '+27821234567', whatsapp: false })).toBe(true);
+    expect(needsPhoneTestAlert({ name: 'Sipho', email: null, phone: '+27821234567', whatsapp: true })).toBe(true);
+  });
+
+  it('does not gate a contact that has no phone number', () => {
+    expect(needsPhoneTestAlert({ name: 'Sipho', email: 's@example.com', phone: null, whatsapp: false })).toBe(false);
+  });
+
+  it('re-tests an edit only when the number itself changed', () => {
+    expect(needsPhoneTestAlert({ ...saved, name: 'Sipho M' }, saved)).toBe(false);
+    expect(needsPhoneTestAlert({ ...saved, phone: '+27829999999' }, saved)).toBe(true);
+  });
+
+  it('treats a contact gaining a phone number as a change', () => {
+    const before = { ...saved, phone: null };
+    expect(needsPhoneTestAlert(saved, before)).toBe(true);
   });
 });

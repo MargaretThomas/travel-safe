@@ -1,3 +1,4 @@
+import { AuthFailedError } from '@/lib/api/auth-session';
 import { ApiError, NetworkError } from '@/lib/api/client';
 import type { CheckInResponse, DeadmanApi, FullStatus, SwitchStatus } from '@/lib/api/deadman-api';
 import type { EmergencyContact } from '@/lib/contacts';
@@ -193,6 +194,59 @@ describe('app store', () => {
     await store.getState().loadContacts();
     expect(store.getState().contacts).toEqual([contact]);
     expect(store.getState().contactsError).toBe('offline');
+  });
+
+  it('falls back to onboarding when the server no longer knows the account', async () => {
+    const { store, session, reminders, jsonStore } = setup({
+      getProfile: jest.fn().mockRejectedValue(new AuthFailedError()),
+    });
+    await jsonStore.set(APP_STATE_KEY, {
+      ...INITIAL_PERSISTED,
+      name: 'Thandi',
+      onboardingComplete: true,
+      contacts: [contact],
+    });
+    await store.getState().hydrate();
+    expect(store.getState().registered).toBe(false);
+    expect(store.getState().onboardingComplete).toBe(false);
+    expect(store.getState().name).toBeNull();
+    expect(store.getState().contacts).toEqual([]);
+    expect(session.clear).toHaveBeenCalled();
+    expect(reminders.cancel).toHaveBeenCalled();
+    expect(await jsonStore.get(APP_STATE_KEY)).toBeNull();
+  });
+
+  it('keeps local state when the account check fails for a non-auth reason', async () => {
+    const { store, session, jsonStore } = setup({ getProfile: jest.fn().mockRejectedValue(new NetworkError()) });
+    await jsonStore.set(APP_STATE_KEY, {
+      ...INITIAL_PERSISTED,
+      name: 'Thandi',
+      onboardingComplete: true,
+      contacts: [contact],
+    });
+    await store.getState().hydrate();
+    expect(store.getState().registered).toBe(true);
+    expect(store.getState().name).toBe('Thandi');
+    expect(store.getState().contacts).toEqual([contact]);
+    expect(session.clear).not.toHaveBeenCalled();
+  });
+
+  it('sends a test alert to a phone number before it is saved', async () => {
+    const testContactMessage = jest.fn(async () => ({ sent: true }));
+    const { store } = setup({ testContactMessage });
+    await store.getState().hydrate();
+    const contact = { name: 'Sipho', email: null, phone: '+27821234567', whatsapp: false };
+    await store.getState().verifyContactPhone(contact);
+    expect(testContactMessage).toHaveBeenCalledWith(contact);
+  });
+
+  it('surfaces test alert failures to the form', async () => {
+    const testContactMessage = jest.fn().mockRejectedValue(new ApiError('x', 503, 'whatsapp_not_connected'));
+    const { store } = setup({ testContactMessage });
+    await store.getState().hydrate();
+    await expect(
+      store.getState().verifyContactPhone({ name: 'Sipho', email: null, phone: '+27821234567', whatsapp: true }),
+    ).rejects.toMatchObject({ code: 'whatsapp_not_connected' });
   });
 
   it('deletes the account and wipes local data', async () => {

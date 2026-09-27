@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ContactForm } from '@/components/contact-form';
 import { ScreenShell } from '@/components/screen-shell';
 import { strings } from '@/i18n/strings';
-import { draftFromContact, EMPTY_DRAFT } from '@/lib/contacts';
+import { draftFromContact, EMPTY_DRAFT, needsPhoneTestAlert } from '@/lib/contacts';
 import { useAppStore } from '@/store';
 
 export default function EditContactScreen() {
@@ -11,6 +11,7 @@ export default function EditContactScreen() {
   const existing = useAppStore((state) => state.contacts.find((contact) => contact.id === id));
   const addContact = useAppStore((state) => state.addContact);
   const updateContact = useAppStore((state) => state.updateContact);
+  const verifyContactPhone = useAppStore((state) => state.verifyContactPhone);
 
   return (
     <ScreenShell
@@ -21,6 +22,7 @@ export default function EditContactScreen() {
         initial={existing ? draftFromContact(existing) : EMPTY_DRAFT}
         allowPicker={!existing}
         onSubmit={async (contact) => {
+          if (needsPhoneTestAlert(contact, existing)) await verifyContactPhone(contact);
           if (existing) {
             await updateContact(existing.id, contact);
             router.back();

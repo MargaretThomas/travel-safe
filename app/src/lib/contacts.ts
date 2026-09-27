@@ -89,6 +89,20 @@ export function contactChannels(contact: Pick<NormalizedContact, 'email' | 'phon
   return channels;
 }
 
+/**
+ * Whether saving this contact must be gated on a test alert to the phone number.
+ *
+ * A number is only stored once it is known to receive alerts, so a mistyped or
+ * unreachable number is caught when it is entered rather than when it matters. Every
+ * number is alerted over WhatsApp regardless of the toggle, so the gate does not
+ * depend on it. Editing only re-tests when the number itself changes, so renaming a
+ * contact doesn't send the person another message.
+ */
+export function needsPhoneTestAlert(contact: NormalizedContact, previous?: EmergencyContact | null): boolean {
+  if (!contact.phone) return false;
+  return !previous || previous.phone !== contact.phone;
+}
+
 export type PhoneCandidate = { label?: string; number?: string; isPrimary?: boolean };
 
 const PHONE_LABEL_PRIORITY = ['mobile', 'iphone', 'cell', 'main', 'home', 'work'];

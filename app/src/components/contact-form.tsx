@@ -69,6 +69,7 @@ export function ContactForm({ initial, onSubmit, submitLabel = strings.contacts.
     try {
       await onSubmit(result.contact);
     } catch (error) {
+      console.log(error)
       setSaveError(contactSaveErrorMessage(error));
     } finally {
       setSaving(false);

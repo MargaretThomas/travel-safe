@@ -74,67 +74,76 @@ export default function HomeScreen() {
           testID="home-screen"
           contentContainerStyle={styles.content}
           refreshControl={<RefreshControl refreshing={syncing} onRefresh={() => void sync()} />}>
-          <ThemedText type="subtitle" style={styles.greeting}>
-            {format(strings.home.greeting, { name: name ?? '' })}
-          </ThemedText>
+          {
+            /*
+            <StatusCard status={status} />
 
-          <StatusCard status={status} />
+            {status.hasUnsyncedCheckIn ? (
+              <Notice
+                testID="home-pending-banner"
+                tone="warning"
+                message={pendingBannerMessage(status.deadline, now)}
+                action={
+                  <PrimaryButton
+                    testID="home-sync-now"
+                    variant="subtle"
+                    label={strings.home.syncNow}
+                    loading={syncing}
+                    onPress={() => void sync({ notifyConfirmed: false })}
+                  />
+                }
+              />
+            ) : null}
 
-          {status.hasUnsyncedCheckIn ? (
-            <Notice
-              testID="home-pending-banner"
-              tone="warning"
-              message={pendingBannerMessage(status.deadline, now)}
-              action={
-                <PrimaryButton
-                  testID="home-sync-now"
-                  variant="subtle"
-                  label={strings.home.syncNow}
-                  loading={syncing}
-                  onPress={() => void sync({ notifyConfirmed: false })}
+            {message ? <Notice testID="home-check-in-result" tone={message.tone} message={message.message} /> : null}
+
+            {syncError && !status.hasUnsyncedCheckIn && server ? (
+              <Notice
+                testID="home-offline-status"
+                message={
+                  lastSynced
+                    ? `${strings.home.offlineStatus} ${format(strings.home.lastSynced, { when: formatRelativeDateTime(lastSynced, now) })}`
+                    : strings.home.offlineStatus
+                }
+              />
+            ) : null}
+
+            {syncError === 'auth' ? <Notice tone="danger" message={strings.account.authFailed} /> : null}
+            {warnings.map((warning) => {
+              const route = WARNING_ROUTES[warning];
+              return (
+                <Notice
+                  key={warning}
+                  testID={`health-${warning}`}
+                  tone={warning === 'no_contacts' ? 'danger' : 'warning'}
+                  message={strings.health[warning]}
+                  action={
+                    route ? (
+                      <PrimaryButton
+                        testID={`health-${warning}-fix`}
+                        variant="subtle"
+                        label={strings.health.fix}
+                        onPress={() => router.push(route)}
+                      />
+                    ) : undefined
+                  }
                 />
-              }
-            />
-          ) : null}
+              );
+            })}
+            */
+          }
+
+
+
+
 
           <CheckInButton onPress={() => void onCheckIn()} busy={checkingIn} tone={status.tone} />
 
-          {message ? <Notice testID="home-check-in-result" tone={message.tone} message={message.message} /> : null}
 
-          {syncError && !status.hasUnsyncedCheckIn && server ? (
-            <Notice
-              testID="home-offline-status"
-              message={
-                lastSynced
-                  ? `${strings.home.offlineStatus} ${format(strings.home.lastSynced, { when: formatRelativeDateTime(lastSynced, now) })}`
-                  : strings.home.offlineStatus
-              }
-            />
-          ) : null}
 
-          {syncError === 'auth' ? <Notice tone="danger" message={strings.account.authFailed} /> : null}
 
-          {warnings.map((warning) => {
-            const route = WARNING_ROUTES[warning];
-            return (
-              <Notice
-                key={warning}
-                testID={`health-${warning}`}
-                tone={warning === 'no_contacts' ? 'danger' : 'warning'}
-                message={strings.health[warning]}
-                action={
-                  route ? (
-                    <PrimaryButton
-                      testID={`health-${warning}-fix`}
-                      variant="subtle"
-                      label={strings.health.fix}
-                      onPress={() => router.push(route)}
-                    />
-                  ) : undefined
-                }
-              />
-            );
-          })}
+
+
 
           <FeatureCard>
             <View>

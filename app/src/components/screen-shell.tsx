@@ -26,21 +26,11 @@ export function ScreenShell({ title, subtitle, testID, footer, showBack = true, 
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
         <KeyboardAvoidingView style={styles.safeArea} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={styles.header}>
-            {showBack ? (
-              <Pressable
-                testID="screen-back"
-                accessibilityRole="button"
-                accessibilityLabel={strings.common.back}
-                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.backButton,
-                  { backgroundColor: theme.backgroundElement },
-                  pressed && styles.pressed,
-                ]}>
-                <ThemedText type="smallBold">←</ThemedText>
-              </Pressable>
-            ) : null}
+            {
+              /*
+
+              */
+            }
             <View style={styles.headerText}>
               {title ? (
                 <ThemedText type="subtitle" accessibilityRole="header" style={styles.title}>

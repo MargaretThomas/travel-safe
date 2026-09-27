@@ -4,6 +4,12 @@ appId: makers.travel.safe
 # and remove. The native contact picker is system UI and is not automated.
 # Simulators have no enrolled biometrics or passcode, so the settings
 # protection guard lets actions through without a prompt.
+#
+# Saving a contact with a phone number first sends a test alert to that number via
+# the backend; the contact is only saved if that send succeeds. This applies to
+# every phone number, not just ones with the WhatsApp toggle, because the backend
+# alerts all numbers over WhatsApp. So this flow needs WHATSAPP_BOT_URL paired on
+# the backend.
 
 - runFlow: subflows/complete-onboarding.yaml
 
@@ -76,3 +82,25 @@ appId: makers.travel.safe
 - assertVisible:
     id: "contacts-screen"
 - assertNotVisible: "Lerato M"
+
+# A phone number is gated on a test alert even without the WhatsApp toggle, since
+# the backend alerts every number over WhatsApp.
+- tapOn:
+    id: "contacts-add"
+- assertVisible:
+    id: "contact-edit-screen"
+- tapOn:
+    id: "contact-name"
+- inputText: "Nomsa"
+- tapOn:
+    id: "contact-phone"
+- inputText: "+27829998888"
+- hideKeyboard
+- tapOn:
+    id: "contact-save"
+- extendedWaitUntil:
+    visible:
+      id: "contact-detail"
+    timeout: 10000
+- assertVisible:
+    id: "contact-detail-phone"

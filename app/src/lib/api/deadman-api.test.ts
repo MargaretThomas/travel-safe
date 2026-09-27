@@ -41,6 +41,20 @@ describe('deadman api', () => {
     expect(authorizedRequest).toHaveBeenLastCalledWith('/api/v1/contacts/a%2Fb', { method: 'DELETE' });
   });
 
+  it('posts a WhatsApp test message before saving a contact', async () => {
+    const { session, authorizedRequest } = fakeSession();
+    await createDeadmanApi(session).testContactMessage({
+      name: 'Sipho',
+      email: null,
+      phone: '+27821234567',
+      whatsapp: true,
+    });
+    expect(authorizedRequest).toHaveBeenCalledWith('/api/v1/contacts/test-message', {
+      method: 'POST',
+      body: { name: 'Sipho', email: null, phone: '+27821234567', whatsapp: true },
+    });
+  });
+
   it('uploads location batches with their source', async () => {
     const { session, authorizedRequest } = fakeSession();
     await createDeadmanApi(session).uploadLocations(

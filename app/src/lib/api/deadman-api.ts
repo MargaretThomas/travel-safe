@@ -104,6 +104,11 @@ export function createDeadmanApi(session: AuthSession) {
     listContacts: () => call<{ contacts: EmergencyContact[] }>('/api/v1/contacts').then((body) => body.contacts),
     addContact: (contact: NormalizedContact) =>
       call<EmergencyContact>('/api/v1/contacts', { method: 'POST', body: contact }),
+    testContactMessage: (contact: NormalizedContact) =>
+      call<{ sent: boolean; message_id?: string | null }>('/api/v1/contacts/test-message', {
+        method: 'POST',
+        body: contact,
+      }),
     updateContact: (id: string, contact: NormalizedContact) =>
       call<EmergencyContact>(`/api/v1/contacts/${encodeURIComponent(id)}`, { method: 'PUT', body: contact }),
     deleteContact: (id: string) => call<void>(`/api/v1/contacts/${encodeURIComponent(id)}`, { method: 'DELETE' }),

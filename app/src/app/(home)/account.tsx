@@ -55,11 +55,19 @@ export default function AccountScreen() {
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
         <ScrollView testID="account-screen" contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle" accessibilityRole="header" style={styles.title}>
-            {copy.title}
-          </ThemedText>
+          {
+            /*
+            <ThemedText type="subtitle" accessibilityRole="header" style={styles.title}>
+              {copy.title}
+            </ThemedText>
 
-          {syncError === 'auth' ? <Notice tone="danger" message={copy.authFailed} /> : null}
+            {syncError === 'auth' ? <Notice tone="danger" message={copy.authFailed} /> : null}
+            */
+          }
+
+
+
+
 
           <Section title={copy.profile}>
             <ListRow

@@ -20,9 +20,6 @@ export function OnboardingShell({ step, title, body, footer, children }: Onboard
   const index = ONBOARDING_STEPS.indexOf(step);
   return (
     <ScreenShell testID={`onboarding-${step}`} title={title} subtitle={body} footer={footer} showBack={index > 0}>
-      <ThemedText type="small" themeColor="textSecondary">
-        {format(strings.onboarding.progress, { step: index + 1, total: ONBOARDING_STEPS.length })}
-      </ThemedText>
       {children}
     </ScreenShell>
   );

@@ -58,7 +58,7 @@ country need no permission.
   requires.
 - **Processors to list in the privacy policy:**
   - Resend (email).
-  - Twilio (WhatsApp and SMS).
+  - A self-hosted WhatsApp gateway (unofficial WhatsApp Web client) for WhatsApp messages.
   - Mapbox (maps and geocoding on the emergency page).
   - The hosting provider.
 - Update `PrivacyInfo.xcprivacy` (the privacy manifest) with the required-reason APIs used by
