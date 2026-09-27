@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,9 +12,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
@@ -36,9 +40,10 @@ const (
 var phonePattern = regexp.MustCompile(`^\d{7,15}$`)
 
 type config struct {
-	host  string
-	port  string
-	token string
+	host     string
+	port     string
+	token    string
+	pushName string
 }
 
 func loadConfig() config {
@@ -48,6 +53,11 @@ func loadConfig() config {
 		host:  envOr("HOST", "127.0.0.1"),
 		port:  envOr("PORT", "8080"),
 		token: os.Getenv("WHATSAPP_BOT_TOKEN"),
+		// WhatsApp shows this name on the linked device and to the people it
+		// messages. whatsmeow refuses to send presence without one, and an empty
+		// push name makes contacts see "-" as the sender, so default it rather
+		// than let the gateway come up unnamed.
+		pushName: envOr("PUSH_NAME", "whatsapp-bot"),
 	}
 	if cfg.token == "" {
 		// Failing closed beats running an unauthenticated send endpoint. The
@@ -95,10 +105,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get device: %v", err)
 	}
+	// Set before the client is built: whatsmeow reads the push name off the store
+	// when it reports presence, and WhatsApp keeps showing the old name until it
+	// has been sent at least once over a live socket.
+	device.PushName = cfg.pushName
 
 	clientLog := waLog.Stdout("Client", "WARN", true)
 	cli := whatsmeow.NewClient(device, clientLog)
 
+	// A logout is terminal: the session in store.db can no longer authenticate, and
+	// this process cannot re-pair on its own. Exiting non-zero means a supervisor
+	// restarts us into a visible failure instead of leaving a process running whose
+	// socket is dead and whose only symptom is a permanent 503 from /send.
+	loggedOut := make(chan struct{})
 	cli.AddEventHandler(func(evt any) {
 		switch e := evt.(type) {
 		case *events.Message:
@@ -108,7 +127,13 @@ func main() {
 		case *events.Disconnected:
 			log.Println("disconnected from WhatsApp")
 		case *events.LoggedOut:
-			log.Println("logged out, delete store.db and re-pair")
+			log.Printf("logged out (%v): stop the bot, delete %s and %s, then run again to re-pair",
+				e.Reason, dbPath, qrImagePath)
+			select {
+			case <-loggedOut:
+			default:
+				close(loggedOut)
+			}
 		}
 	})
 
@@ -143,14 +168,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen on %s: %v", address, err)
 	}
+	server := &http.Server{Handler: mux}
 	go func() {
-		if err := http.Serve(listener, mux); err != nil {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("server failed: %v", err)
 		}
 	}()
 	log.Printf("gateway listening on http://%s (POST /send requires a bearer token)", address)
 
 	if !cli.IsLoggedIn() {
+		if device.ID != nil {
+			// store.db still holds an identity that the server no longer accepts, so
+			// whatsmeow will refuse to hand out a QR code. Say what to delete rather
+			// than surfacing a library error about a user ID in the store.
+			log.Fatalf("%s holds a session that is no longer logged in; delete it (and %s) and run again to re-pair",
+				dbPath, qrImagePath)
+		}
 		if err := pairWithQR(ctx, cli); err != nil {
 			log.Fatalf("pairing failed: %v", err)
 		}
@@ -162,6 +195,26 @@ func main() {
 		log.Printf("failed to send presence: %v", err)
 	}
 	log.Println("ready: WhatsApp connected")
+
+	// main returning ends the process, and with it the WhatsApp socket and the HTTP
+	// server: the linked device drops straight back off WhatsApp, which reads as a
+	// failed link even though pairing itself reported success. Block here until a
+	// signal (or a logout) asks us to stop.
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case <-signalCtx.Done():
+		log.Println("shutting down")
+	case <-loggedOut:
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http shutdown: %v", err)
+	}
+	cli.Disconnect()
 }
 
 func pairWithQR(ctx context.Context, cli *whatsmeow.Client) error {
