@@ -51,4 +51,26 @@ describe('computeReminderSchedule', () => {
     const times = schedule.map((item) => item.fireAt.getTime());
     expect(new Set(times).size).toBe(times.length);
   });
+
+  it('schedules against the default interval when the given one cannot be turned into a duration', () => {
+    const deadline = new Date(now.getTime() + 7 * DAY_MS);
+    [undefined, null, NaN, Infinity, '10080'].forEach((minutes) => {
+      const schedule = computeReminderSchedule(deadline, minutes as unknown as number, now);
+      expect(schedule.map((item) => item.kind)).toEqual(['reminder', 'final', 'expired']);
+      expect(schedule.every((item) => Number.isFinite(item.fireAt.getTime()))).toBe(true);
+    });
+  });
+
+  it('drops a reminder whose offset is not a real number instead of scheduling an Invalid Date', () => {
+    const deadline = new Date(now.getTime() + 7 * DAY_MS);
+    const rules = buildReminderRules();
+    rules[0] = { ...rules[0], offsetMs: NaN };
+    const schedule = computeReminderSchedule(deadline, 7 * DAY_MINUTES, now, rules);
+    expect(schedule.map((item) => item.kind)).toEqual(['final', 'expired']);
+    expect(schedule.every((item) => Number.isFinite(item.fireAt.getTime()))).toBe(true);
+  });
+
+  it('drops everything when the deadline is not a real date', () => {
+    expect(computeReminderSchedule(new Date(NaN), 7 * DAY_MINUTES, now)).toEqual([]);
+  });
 });

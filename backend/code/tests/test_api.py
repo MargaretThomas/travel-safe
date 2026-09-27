@@ -65,6 +65,77 @@ def test_profile_update(client, register):
     assert client.patch("/api/v1/me", json={"name": "   "}, headers=account.headers).status_code == 422
 
 
+@pytest.mark.parametrize(
+    ("minutes", "days"),
+    [(1440, 1), (10080, 7), (43200, 30), (525600, 365), (720, 1), (60, 1)],
+)
+def test_register_accepts_interval_in_minutes(client, minutes, days):
+    """The installed app build sends the interval in minutes rather than days."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"name": "Sibongiseni", "check_in_interval_minutes": minutes, "timezone": "Africa/Johannesburg"},
+    )
+    assert response.status_code == 201, response.text
+    headers = {"Authorization": f"Bearer {response.json()['tokens']['access_token']}"}
+    assert client.get("/api/v1/me", headers=headers).json()["check_in_interval_days"] == days
+
+
+def test_profile_update_accepts_interval_in_minutes(client, register):
+    account = register()
+    response = client.patch("/api/v1/me", json={"check_in_interval_minutes": 43200}, headers=account.headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["check_in_interval_days"] == 30
+
+
+def test_register_accepts_both_interval_spellings_when_they_agree(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"name": "Thandi", "check_in_interval_days": 7, "check_in_interval_minutes": 10080},
+    )
+    assert response.status_code == 201, response.text
+
+
+def test_register_rejects_conflicting_interval_spellings(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"name": "Thandi", "check_in_interval_days": 7, "check_in_interval_minutes": 43200},
+    )
+    assert response.status_code == 422
+    error = response.json()["error"]
+    assert error["field"] == "check_in_interval_minutes"
+
+
+def test_register_requires_an_interval(client):
+    response = client.post("/api/v1/auth/register", json={"name": "Thandi"})
+    assert response.status_code == 422
+    assert response.json()["error"]["field"] == "check_in_interval_days"
+
+
+def test_register_rejects_interval_beyond_a_year(client):
+    response = client.post("/api/v1/auth/register", json={"name": "Thandi", "check_in_interval_minutes": 525601})
+    assert response.status_code == 422
+    assert response.json()["error"]["field"] == "check_in_interval_minutes"
+
+
+@pytest.mark.parametrize(
+    ("payload", "field"),
+    [
+        ({"name": "Thandi", "check_in_interval_days": 0}, "check_in_interval_days"),
+        ({"name": "Thandi", "check_in_interval_days": 366}, "check_in_interval_days"),
+        ({"name": "", "check_in_interval_days": 7}, "name"),
+        ({"check_in_interval_days": 7}, "name"),
+    ],
+)
+def test_invalid_registration_uses_the_shared_error_envelope(client, payload, field):
+    """A rejected field has to be nameable, or the app can only say "failed with 422"."""
+    response = client.post("/api/v1/auth/register", json=payload)
+    assert response.status_code == 422
+    error = response.json()["error"]
+    assert error["code"] == "invalid_request"
+    assert error["field"] == field
+    assert error["message"]
+
+
 def test_status_reports_contact_count_and_server_time(client, register, add_contact, check_in):
     account = register()
     add_contact(account)

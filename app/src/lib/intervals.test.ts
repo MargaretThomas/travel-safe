@@ -1,4 +1,4 @@
-import { computeDeadline, DAY_MINUTES, DAY_MS, formatDuration, formatInterval, HOUR_MINUTES, HOUR_MS, INTERVAL_PRESETS, intervalPreset, isExpired, isValidInterval, MAX_INTERVAL_MINUTES, MIN_INTERVAL_MINUTES, MINUTE_MS } from './intervals';
+import { computeDeadline, DAY_MINUTES, DAY_MS, DEFAULT_INTERVAL_MINUTES, formatDuration, formatInterval, HOUR_MINUTES, HOUR_MS, INTERVAL_PRESETS, intervalPreset, isExpired, isValidInterval, MAX_INTERVAL_MINUTES, MIN_INTERVAL_MINUTES, MINUTE_MS, normalizeIntervalMinutes } from './intervals';
 
 const start = new Date('2026-01-10T09:00:00Z');
 
@@ -17,6 +17,14 @@ describe('intervals', () => {
     expect(isValidInterval(MIN_INTERVAL_MINUTES - 1)).toBe(false);
     expect(isValidInterval(MAX_INTERVAL_MINUTES + 1)).toBe(false);
     expect(isValidInterval(1.5)).toBe(false);
+  });
+
+  it('replaces an interval that is not usable, so nothing downstream becomes NaN', () => {
+    expect(normalizeIntervalMinutes(7 * DAY_MINUTES)).toBe(7 * DAY_MINUTES);
+    [undefined, null, NaN, Infinity, '10080', '', 0, -5, 1.5, MAX_INTERVAL_MINUTES + 1, {}].forEach((value) => {
+      expect(normalizeIntervalMinutes(value)).toBe(DEFAULT_INTERVAL_MINUTES);
+    });
+    expect(normalizeIntervalMinutes(undefined, HOUR_MINUTES)).toBe(HOUR_MINUTES);
   });
 
   it('computes the deadline from the last check-in', () => {

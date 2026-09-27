@@ -47,6 +47,21 @@ describe('notifications', () => {
     expect(api.cancelScheduledNotificationAsync).toHaveBeenCalledWith(reminderIdentifier('final'));
   });
 
+  it('never hands a non-finite timestamp to the native scheduler, which would trap', async () => {
+    const api = fakeApi();
+    const count = await scheduleDeadlineReminders(
+      new Date(NOW.getTime() + 7 * DAY_MS),
+      undefined as unknown as number,
+      NOW,
+      api as unknown as NotificationsApi,
+    );
+    const dates = api.scheduleNotificationAsync.mock.calls.map(
+      ([request]) => (request as never as { trigger: { date: Date } }).trigger.date.getTime(),
+    );
+    expect(count).toBe(3);
+    expect(dates.every(Number.isFinite)).toBe(true);
+  });
+
   it('tells the user what happens if they do not check in', () => {
     const content = buildReminderContent('reminder', new Date(NOW.getTime() + DAY_MS), NOW);
     expect(content.title).toBe('Check in required');

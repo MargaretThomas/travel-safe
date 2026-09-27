@@ -4,7 +4,9 @@ pretending a notification was sent."""
 
 from __future__ import annotations
 
-from deadman.config import Settings
+import logging
+
+from deadman.config import Settings, env_file_path
 from deadman.geocoding import MapboxGeocoder, NullGeocoder, ReverseGeocoder
 from deadman.notifications.dispatcher import Dispatcher
 from deadman.notifications.providers import (
@@ -16,6 +18,8 @@ from deadman.notifications.providers import (
     WhatsAppBotMessagingProvider,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def build_email_provider(settings: Settings) -> EmailProvider:
     if settings.resend_api_key and settings.resend_from_email:
@@ -26,6 +30,14 @@ def build_email_provider(settings: Settings) -> EmailProvider:
 def build_messaging_provider(settings: Settings) -> MessagingProvider:
     if settings.whatsapp_bot_url:
         return WhatsAppBotMessagingProvider(settings.whatsapp_bot_url, settings.whatsapp_bot_token)
+    # Otherwise every WhatsApp alert fails with channel_not_configured and the app's
+    # test-alert button answers 503 "WhatsApp alerts are not set up on this server yet",
+    # which reads like a gateway problem. Name the cause and the file to fix it in.
+    logger.warning(
+        "WHATSAPP_BOT_URL is not set: WhatsApp alerts will fail with channel_not_configured "
+        "and the test-alert button will return 503. Set it in %s.",
+        env_file_path(),
+    )
     return UnconfiguredMessagingProvider()
 
 

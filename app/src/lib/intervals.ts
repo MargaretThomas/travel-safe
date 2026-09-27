@@ -46,6 +46,16 @@ export function isValidInterval(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= MIN_INTERVAL_MINUTES && minutes <= MAX_INTERVAL_MINUTES;
 }
 
+/**
+ * Server payloads are cast, not parsed, so `check_in_interval_minutes` can arrive missing,
+ * as a string, or outside the supported range. Everything downstream multiplies it, so a
+ * value like `undefined` silently becomes NaN and NaN survives every comparison that
+ * would otherwise catch it. Normalise at the boundary instead.
+ */
+export function normalizeIntervalMinutes(value: unknown, fallback = DEFAULT_INTERVAL_MINUTES): number {
+  return isValidInterval(value as number) ? (value as number) : fallback;
+}
+
 export function intervalDurationMs(minutes: number): number {
   return minutes * MINUTE_MS;
 }

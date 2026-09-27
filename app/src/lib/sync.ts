@@ -2,6 +2,7 @@ import { isAuthError, isNetworkError } from '@/lib/api/client';
 import type { CheckInPayload, CheckInResponse, FullStatus } from '@/lib/api/deadman-api';
 import { flushQueue, type PendingCheckIn } from '@/lib/check-in-queue';
 import { parseDate } from '@/lib/dates';
+import { normalizeIntervalMinutes } from '@/lib/intervals';
 
 export type SyncError = 'offline' | 'auth' | 'server';
 
@@ -48,7 +49,10 @@ export async function syncWithServer(queue: readonly PendingCheckIn[], deps: Syn
 export function reminderTarget(status: FullStatus | null): { deadline: Date; intervalMinutes: number } | null {
   if (!status || status.state !== 'armed') return null;
   const deadline = parseDate(status.next_deadline_at);
-  return deadline ? { deadline, intervalMinutes: status.check_in_interval_minutes } : null;
+  if (!deadline) return null;
+  // The deadline is what contacts are actually notified at, so an unusable interval only
+  // weakens the offset caps: fall back to the default rather than dropping the reminders.
+  return { deadline, intervalMinutes: normalizeIntervalMinutes(status.check_in_interval_minutes) };
 }
 
 const FOREGROUND_SYNC_MIN_GAP_MS = 30_000;

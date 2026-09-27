@@ -5,7 +5,7 @@ import type { DeadmanApi, DeviceState, FullStatus, LocationSample } from '@/lib/
 import type { PendingCheckIn } from '@/lib/check-in-queue';
 import { performCheckIn, type CheckInOutcome } from '@/lib/check-in-service';
 import type { EmergencyContact, NormalizedContact } from '@/lib/contacts';
-import { DAY_MINUTES, DEFAULT_INTERVAL_MINUTES } from '@/lib/intervals';
+import { DAY_MINUTES, DEFAULT_INTERVAL_MINUTES, normalizeIntervalMinutes } from '@/lib/intervals';
 import type { JsonStore } from '@/lib/secure-storage';
 import { classifySyncError, reminderTarget, syncWithServer, type SyncError } from '@/lib/sync';
 
@@ -258,7 +258,7 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
             patch.status = result.status;
             patch.statusFetchedAt = result.fetchedAt?.toISOString() ?? null;
             patch.lastSyncAt = patch.statusFetchedAt;
-            patch.intervalMinutes = result.status.check_in_interval_minutes;
+            patch.intervalMinutes = normalizeIntervalMinutes(result.status.check_in_interval_minutes);
           }
           await update(patch);
           if (result.status) {

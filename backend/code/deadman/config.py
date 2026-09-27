@@ -8,41 +8,54 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
+# Matches `KEY=value` and `export KEY=value`. The key is restricted to the characters a
+# shell would accept so that a line like `DEADMAN_CORS_ORIGINS=*` or a stray `rm -rf /`
+# is read as a value and never mistaken for anything else.
+_ENV_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$")
 
-ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
-_ASSIGNMENT = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$")
+def env_file_path() -> Path:
+    """The .env that belongs to this service, i.e. backend/code/.env.
 
-
-def read_env_file(path: Path | None = None) -> dict[str, str]:
-    """Parse a .env file the way scripts/dev.sh parses it: read, never evaluated, so a
-    value containing < or > stays a value instead of becoming a shell redirect.
-
-    The API and the worker are started by hand as often as by `scripts/dev.sh run`, and
-    from_env reads the process environment. Without this the .env is simply absent when
-    uvicorn is launched directly: the app still starts, silently takes every default
-    (no gateway, a different database, no email), and each of those misconfigurations
-    surfaces much later as a failed alert rather than at startup.
+    Anchored to this file rather than the working directory so the API and the worker
+    read the same one whether dev.sh started them (it cd's into backend/code) or they
+    were launched by hand from the repo root.
     """
-    path = path or ENV_FILE
+    return Path(__file__).resolve().parent.parent / ".env"
+
+
+def load_env_file() -> int:
+    """Copy backend/code/.env into os.environ for keys the process does not already have.
+
+    Only dev.sh used to export this file, so starting uvicorn by hand left
+    WHATSAPP_BOT_URL empty. That silently selects the unconfigured messaging provider
+    and turns every test alert into a 503 reading like a broken WhatsApp gateway,
+    which is a misleading thing to debug. Real environment variables still win, so a
+    deploy that injects its own config is unaffected, and a missing file is not an
+    error. Returns how many keys were taken, for the startup log.
+    """
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        lines = env_file_path().read_text(encoding="utf-8").splitlines()
     except OSError:
-        return {}
-    values: dict[str, str] = {}
+        return 0
+    loaded = 0
     for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
+        if not line.strip() or line.lstrip().startswith("#"):
             continue
-        match = _ASSIGNMENT.match(line)
+        match = _ENV_ASSIGNMENT.match(line)
         if match is None:
             continue
-        value = match.group(2).rstrip()
+        value = match.group(2).strip()
+        # One layer of matching quotes, so a value that is legitimately quoted for
+        # spaces (`RESEND_FROM_EMAIL="Deadman Switch <alerts@example.com>"`) keeps them
+        # as part of the value rather than arriving with its quotes still attached.
         if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
             value = value[1:-1]
-        values[match.group(1)] = value
-    return values
+        key = match.group(1)
+        if key not in os.environ:
+            os.environ[key] = value
+            loaded += 1
+    return loaded
 
 
 def _optional(env: Mapping[str, str], key: str) -> str | None:
@@ -88,15 +101,11 @@ class Settings:
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         if env is None:
-            # Variables already exported into the process win over the file, so a
-            # container or a systemd unit can override .env without editing it.
-            env = {**read_env_file(), **os.environ}
-            if not env.get("WHATSAPP_BOT_URL", "").strip():
-                logger.warning(
-                    "WHATSAPP_BOT_URL is not set (no %s, nothing in the environment): phone "
-                    "notifications will fail with whatsapp_not_configured.",
-                    ENV_FILE.name,
-                )
+            # Only the live process reads the file. A caller that passes its own mapping
+            # is a test or a caller with deliberate settings, and must not have the real
+            # .env bleed into them.
+            load_env_file()
+            env = os.environ
         origins = tuple(
             origin.strip() for origin in env.get("DEADMAN_CORS_ORIGINS", "").split(",") if origin.strip()
         )
