@@ -6,7 +6,7 @@ from datetime import datetime
 from deadman.config import Settings
 from deadman.db import transaction
 from deadman.errors import ConflictError, NotFoundError, ValidationFailed
-from deadman.switch import compute_deadline, is_expired, seconds_remaining, validate_interval
+from deadman.switch import compute_deadline, is_expired, seconds_remaining, validate_interval_minutes
 from deadman.timeutil import from_db, to_db
 
 MAX_NAME_LENGTH = 100
@@ -36,7 +36,7 @@ def get_profile(connection: sqlite3.Connection, user_id: str) -> dict:
         "id": row["id"],
         "name": row["name"],
         "timezone": row["timezone"],
-        "check_in_interval_days": row["check_in_interval_days"],
+        "check_in_interval_minutes": row["check_in_interval_minutes"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
     }
@@ -49,19 +49,21 @@ def update_profile(
     now: datetime,
     name: str | None = None,
     timezone: str | None = None,
-    interval_days: int | None = None,
+    interval_minutes: int | None = None,
 ) -> dict:
     with transaction(connection):
         user = _load_user(connection, user_id)
         new_name = validate_name(name) if name is not None else user["name"]
         new_zone = timezone if timezone is not None else user["timezone"]
-        new_interval = user["check_in_interval_days"]
+        new_interval = user["check_in_interval_minutes"]
         new_deadline = user["next_deadline_at"]
-        if interval_days is not None:
+        if interval_minutes is not None:
             try:
-                new_interval = validate_interval(interval_days)
+                new_interval = validate_interval_minutes(interval_minutes)
             except ValueError as error:
-                raise ValidationFailed("invalid_interval", str(error), "check_in_interval_days") from error
+                raise ValidationFailed(
+                    "invalid_interval", str(error), "check_in_interval_minutes"
+                ) from error
             last_check_in = from_db(user["last_check_in_at"])
             if last_check_in is not None and user["switch_state"] == "armed":
                 deadline = compute_deadline(last_check_in, new_interval)
@@ -73,7 +75,7 @@ def update_profile(
                 new_deadline = to_db(deadline)
         connection.execute(
             """
-            UPDATE users SET name = ?, timezone = ?, check_in_interval_days = ?, next_deadline_at = ?,
+            UPDATE users SET name = ?, timezone = ?, check_in_interval_minutes = ?, next_deadline_at = ?,
                 updated_at = ?
             WHERE id = ?
             """,
@@ -136,7 +138,7 @@ def switch_status(connection: sqlite3.Connection, user_id: str, now: datetime) -
     ).fetchone()[0]
     return {
         "state": user["switch_state"],
-        "check_in_interval_days": user["check_in_interval_days"],
+        "check_in_interval_minutes": user["check_in_interval_minutes"],
         "last_check_in_at": user["last_check_in_at"],
         "next_deadline_at": user["next_deadline_at"],
         "seconds_remaining": seconds_remaining(deadline, now),

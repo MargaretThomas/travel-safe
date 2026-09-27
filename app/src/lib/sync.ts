@@ -45,10 +45,10 @@ export async function syncWithServer(queue: readonly PendingCheckIn[], deps: Syn
  * Reminders follow the server deadline, even while a check-in is waiting to sync: until
  * the server has it, that is the deadline contacts would actually be notified at.
  */
-export function reminderTarget(status: FullStatus | null): { deadline: Date; intervalDays: number } | null {
+export function reminderTarget(status: FullStatus | null): { deadline: Date; intervalMinutes: number } | null {
   if (!status || status.state !== 'armed') return null;
   const deadline = parseDate(status.next_deadline_at);
-  return deadline ? { deadline, intervalDays: status.check_in_interval_days } : null;
+  return deadline ? { deadline, intervalMinutes: status.check_in_interval_minutes } : null;
 }
 
 const FOREGROUND_SYNC_MIN_GAP_MS = 30_000;

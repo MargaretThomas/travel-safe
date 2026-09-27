@@ -30,12 +30,31 @@ appId: makers.travel.safe
     id: "screen-back"
 
 # Change interval (no auth prompt on simulators without biometrics or passcode).
+# Preset testIDs are keys like interval-1h, not durations, so an hour reads as interval-1h.
 - tapOn:
     id: "account-interval"
 - assertVisible:
     id: "settings-interval"
+- assertVisible:
+    id: "interval-1h"
 - tapOn:
-    id: "interval-14"
+    id: "interval-1h"
+- tapOn:
+    id: "settings-interval-save"
+- extendedWaitUntil:
+    visible:
+      id: "settings-interval-message"
+    timeout: 10000
+- assertVisible: "Saved.*"
+- tapOn:
+    id: "screen-back"
+- assertVisible: "1 hour"
+
+# Longer intervals are still there, and changing again moves the deadline.
+- tapOn:
+    id: "account-interval"
+- tapOn:
+    id: "interval-2w"
 - tapOn:
     id: "settings-interval-save"
 - extendedWaitUntil:

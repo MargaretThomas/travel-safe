@@ -72,12 +72,12 @@ describe('deadman api', () => {
   it('delegates registration and profile updates', async () => {
     const { session, register, authorizedRequest } = fakeSession();
     const api = createDeadmanApi(session);
-    await api.register({ name: 'T', intervalDays: 7 });
-    expect(register).toHaveBeenCalledWith({ name: 'T', intervalDays: 7 });
-    await api.updateProfile({ check_in_interval_days: 30 });
+    await api.register({ name: 'T', intervalMinutes: 60 });
+    expect(register).toHaveBeenCalledWith({ name: 'T', intervalMinutes: 60 });
+    await api.updateProfile({ check_in_interval_minutes: 30 * 1440 });
     expect(authorizedRequest).toHaveBeenLastCalledWith('/api/v1/me', {
       method: 'PATCH',
-      body: { check_in_interval_days: 30 },
+      body: { check_in_interval_minutes: 30 * 1440 },
     });
   });
 });

@@ -41,7 +41,7 @@ export default function HomeScreen() {
   const fetchedAt = useAppStore((state) => state.statusFetchedAt);
   const lastSyncAt = useAppStore((state) => state.lastSyncAt);
   const pending = useAppStore((state) => state.pending);
-  const intervalDays = useAppStore((state) => state.intervalDays);
+  const intervalMinutes = useAppStore((state) => state.intervalMinutes);
   const contacts = useAppStore((state) => state.contacts);
   const journeySharing = useAppStore((state) => state.journeySharing);
   const protectCheckIn = useAppStore((state) => state.security.protectCheckIn);
@@ -53,7 +53,7 @@ export default function HomeScreen() {
   const [message, setMessage] = useState<UserMessage | null>(null);
   const { warnings } = useHealth(contacts.length);
 
-  const status = deriveHomeStatus({ server, fetchedAt: parseDate(fetchedAt), pending, intervalDays, now });
+  const status = deriveHomeStatus({ server, fetchedAt: parseDate(fetchedAt), pending, intervalMinutes, now });
 
   const onCheckIn = async () => {
     setMessage(null);
@@ -160,7 +160,7 @@ export default function HomeScreen() {
               <ListRow
                 testID="home-interval"
                 label={strings.home.interval}
-                value={formatInterval(intervalDays)}
+                value={formatInterval(intervalMinutes)}
                 onPress={() => router.push('/settings/interval')}
               />
               <ListRow

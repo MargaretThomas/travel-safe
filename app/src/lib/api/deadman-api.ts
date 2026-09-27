@@ -5,7 +5,7 @@ export type SwitchState = 'inactive' | 'armed' | 'triggered' | 'archived';
 
 export type SwitchStatus = {
   state: SwitchState;
-  check_in_interval_days: number;
+  check_in_interval_minutes: number;
   last_check_in_at: string | null;
   next_deadline_at: string | null;
   seconds_remaining: number | null;
@@ -38,7 +38,7 @@ export type Profile = {
   id: string;
   name: string;
   timezone: string | null;
-  check_in_interval_days: number;
+  check_in_interval_minutes: number;
   created_at: string;
   updated_at: string;
 };
@@ -84,7 +84,7 @@ export function createDeadmanApi(session: AuthSession) {
   return {
     register: (input: RegisterInput) => session.register(input),
     getProfile: () => call<Profile>('/api/v1/me'),
-    updateProfile: (patch: { name?: string; timezone?: string; check_in_interval_days?: number }) =>
+    updateProfile: (patch: { name?: string; timezone?: string; check_in_interval_minutes?: number }) =>
       call<Profile>('/api/v1/me', { method: 'PATCH', body: patch }),
     deleteProfile: () => call<{ archived: boolean; purge_after: string }>('/api/v1/me', { method: 'DELETE' }),
     logout: () => call<void>('/api/v1/auth/logout', { method: 'POST' }),

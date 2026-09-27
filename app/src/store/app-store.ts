@@ -5,7 +5,7 @@ import type { DeadmanApi, DeviceState, FullStatus, LocationSample } from '@/lib/
 import type { PendingCheckIn } from '@/lib/check-in-queue';
 import { performCheckIn, type CheckInOutcome } from '@/lib/check-in-service';
 import type { EmergencyContact, NormalizedContact } from '@/lib/contacts';
-import { DEFAULT_INTERVAL_DAYS } from '@/lib/intervals';
+import { DAY_MINUTES, DEFAULT_INTERVAL_MINUTES } from '@/lib/intervals';
 import type { JsonStore } from '@/lib/secure-storage';
 import { classifySyncError, reminderTarget, syncWithServer, type SyncError } from '@/lib/sync';
 
@@ -16,7 +16,7 @@ export type SecuritySettings = { protectSettings: boolean; protectCheckIn: boole
 export type PersistedState = {
   name: string | null;
   onboardingComplete: boolean;
-  intervalDays: number;
+  intervalMinutes: number;
   profileCreatedAt: string | null;
   status: FullStatus | null;
   statusFetchedAt: string | null;
@@ -30,7 +30,7 @@ export type PersistedState = {
 export const INITIAL_PERSISTED: PersistedState = {
   name: null,
   onboardingComplete: false,
-  intervalDays: DEFAULT_INTERVAL_DAYS,
+  intervalMinutes: DEFAULT_INTERVAL_MINUTES,
   profileCreatedAt: null,
   status: null,
   statusFetchedAt: null,
@@ -42,7 +42,7 @@ export const INITIAL_PERSISTED: PersistedState = {
 };
 
 export type ReminderPort = {
-  schedule: (deadline: Date, intervalDays: number, now: Date) => Promise<unknown>;
+  schedule: (deadline: Date, intervalMinutes: number, now: Date) => Promise<unknown>;
   cancel: () => Promise<unknown>;
   notifySynced: (deadline: Date, now: Date) => Promise<unknown>;
 };
@@ -70,7 +70,7 @@ export type AppState = PersistedState & {
   verifyAccount: () => Promise<void>;
   register: (name: string) => Promise<void>;
   updateName: (name: string) => Promise<void>;
-  setIntervalDays: (days: number) => Promise<void>;
+  setIntervalMinutes: (minutes: number) => Promise<void>;
   completeOnboarding: () => Promise<void>;
   checkIn: () => Promise<CheckInOutcome>;
   sync: (options?: { notifyConfirmed?: boolean }) => Promise<SyncError | null>;
@@ -85,6 +85,21 @@ export type AppState = PersistedState & {
 };
 
 const PERSISTED_KEYS = Object.keys(INITIAL_PERSISTED) as (keyof PersistedState)[];
+
+/** Persisted state written before sub-day intervals existed kept the interval in days. */
+type StoredState = Partial<PersistedState> & { intervalDays?: number };
+
+/**
+ * Reading a stale `intervalDays` as minutes would be catastrophic, and leaving it out
+ * would show the default interval until the next successful sync, which reads as
+ * "safer than it is" while offline.
+ */
+export function migratePersistedState(saved: StoredState | null): Partial<PersistedState> {
+  if (!saved) return {};
+  if (saved.intervalMinutes !== undefined || saved.intervalDays === undefined) return saved;
+  const { intervalDays, ...rest } = saved;
+  return { ...rest, intervalMinutes: intervalDays * DAY_MINUTES };
+}
 
 function pickPersisted(state: AppState): PersistedState {
   const out: Record<string, unknown> = {};
@@ -120,7 +135,7 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
     async function applyReminders(status: FullStatus | null): Promise<void> {
       const target = reminderTarget(status);
       try {
-        if (target) await deps.reminders.schedule(target.deadline, target.intervalDays, now());
+        if (target) await deps.reminders.schedule(target.deadline, target.intervalMinutes, now());
         else await deps.reminders.cancel();
       } catch {
         // Notification delivery can fail (e.g. permission revoked); home shows the health warning.
@@ -143,10 +158,10 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
 
       async hydrate() {
         const [saved, registered] = await Promise.all([
-          deps.store.get<Partial<PersistedState>>(APP_STATE_KEY).catch(() => null),
+          deps.store.get<StoredState>(APP_STATE_KEY).catch(() => null),
           deps.session.hasCredentials().catch(() => false),
         ]);
-        set({ ...INITIAL_PERSISTED, ...saved, registered, hydrated: true });
+        set({ ...INITIAL_PERSISTED, ...migratePersistedState(saved), registered, hydrated: true });
         if (registered) await get().verifyAccount();
       },
 
@@ -178,7 +193,7 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
           await get().updateName(trimmed);
           return;
         }
-        await deps.api.register({ name: trimmed, intervalDays: get().intervalDays, timezone: timezone() });
+        await deps.api.register({ name: trimmed, intervalMinutes: get().intervalMinutes, timezone: timezone() });
         await update({ name: trimmed, registered: true, profileCreatedAt: now().toISOString() });
       },
 
@@ -187,13 +202,13 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
         await update({ name: profile.name, profileCreatedAt: profile.created_at });
       },
 
-      async setIntervalDays(days) {
+      async setIntervalMinutes(minutes) {
         if (get().registered) {
-          await deps.api.updateProfile({ check_in_interval_days: days });
-          await update({ intervalDays: days });
+          await deps.api.updateProfile({ check_in_interval_minutes: minutes });
+          await update({ intervalMinutes: minutes });
           await get().sync();
         } else {
-          await update({ intervalDays: days });
+          await update({ intervalMinutes: minutes });
         }
       },
 
@@ -243,7 +258,7 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
             patch.status = result.status;
             patch.statusFetchedAt = result.fetchedAt?.toISOString() ?? null;
             patch.lastSyncAt = patch.statusFetchedAt;
-            patch.intervalDays = result.status.check_in_interval_days;
+            patch.intervalMinutes = result.status.check_in_interval_minutes;
           }
           await update(patch);
           if (result.status) {

@@ -14,9 +14,9 @@ import { useAppStore } from '@/store';
 
 export default function OnboardingIntervalScreen() {
   const copy = strings.onboarding.interval;
-  const saved = useAppStore((state) => state.intervalDays);
-  const setIntervalDays = useAppStore((state) => state.setIntervalDays);
-  const [days, setDays] = useState(saved);
+  const saved = useAppStore((state) => state.intervalMinutes);
+  const setIntervalMinutes = useAppStore((state) => state.setIntervalMinutes);
+  const [minutes, setMinutes] = useState(saved);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const now = new Date();
@@ -25,7 +25,7 @@ export default function OnboardingIntervalScreen() {
     setSaving(true);
     setError(null);
     try {
-      if (days !== saved) await setIntervalDays(days);
+      if (minutes !== saved) await setIntervalMinutes(minutes);
       router.push('/onboarding/ready');
     } catch (err) {
       setError(intervalErrorMessage(err));
@@ -47,11 +47,11 @@ export default function OnboardingIntervalScreen() {
           onPress={submit}
         />
       }>
-      <IntervalPicker value={days} onChange={setDays} disabled={saving} />
+      <IntervalPicker value={minutes} onChange={setMinutes} disabled={saving} />
       <Notice
         testID="interval-deadline-preview"
         message={format(strings.intervals.selectedHint, {
-          deadline: formatRelativeDateTime(computeDeadline(now, days), now),
+          deadline: formatRelativeDateTime(computeDeadline(now, minutes), now),
         })}
       />
       <Notice testID="interval-warning" tone="warning" message={copy.warning} />

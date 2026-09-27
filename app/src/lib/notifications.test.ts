@@ -1,4 +1,4 @@
-import { DAY_MS, HOUR_MS } from './intervals';
+import { DAY_MINUTES, DAY_MS, HOUR_MS } from './intervals';
 import {
   buildReminderContent,
   cancelDeadlineReminders,
@@ -24,7 +24,7 @@ describe('notifications', () => {
   it('schedules reminder, final warning and deadline notifications', async () => {
     const api = fakeApi();
     const deadline = new Date(NOW.getTime() + 7 * DAY_MS);
-    const count = await scheduleDeadlineReminders(deadline, 7, NOW, api as unknown as NotificationsApi);
+    const count = await scheduleDeadlineReminders(deadline, 7 * DAY_MINUTES, NOW, api as unknown as NotificationsApi);
     expect(count).toBe(3);
     const calls = api.scheduleNotificationAsync.mock.calls.map(([request]) => request as never as {
       identifier: string;
@@ -40,7 +40,7 @@ describe('notifications', () => {
 
   it('cancels old reminders before rescheduling so they never duplicate', async () => {
     const api = fakeApi();
-    await scheduleDeadlineReminders(new Date(NOW.getTime() + DAY_MS), 1, NOW, api as unknown as NotificationsApi);
+    await scheduleDeadlineReminders(new Date(NOW.getTime() + DAY_MS), DAY_MINUTES, NOW, api as unknown as NotificationsApi);
     const cancelOrder = api.cancelScheduledNotificationAsync.mock.invocationCallOrder[0];
     const scheduleOrder = api.scheduleNotificationAsync.mock.invocationCallOrder[0];
     expect(cancelOrder).toBeLessThan(scheduleOrder);

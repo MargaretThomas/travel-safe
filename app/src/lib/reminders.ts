@@ -1,5 +1,5 @@
 import { getReminderOffsetsMs } from '@/lib/config';
-import { HOUR_MS, intervalMs } from '@/lib/intervals';
+import { HOUR_MS, intervalDurationMs } from '@/lib/intervals';
 
 export type ReminderKind = 'reminder' | 'final' | 'expired';
 
@@ -25,11 +25,11 @@ export function buildReminderRules(
 
 export function computeReminderSchedule(
   deadline: Date,
-  intervalDays: number,
+  intervalMinutes: number,
   now: Date,
   rules: ReminderRule[] = buildReminderRules(),
 ): ScheduledReminder[] {
-  const span = intervalMs(intervalDays);
+  const span = intervalDurationMs(intervalMinutes);
   const seen = new Set<number>();
   const reminders: ScheduledReminder[] = [];
   for (const rule of rules) {

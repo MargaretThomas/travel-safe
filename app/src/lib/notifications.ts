@@ -61,12 +61,12 @@ export async function cancelDeadlineReminders(api: NotificationsApi = Notificati
  */
 export async function scheduleDeadlineReminders(
   deadline: Date,
-  intervalDays: number,
+  intervalMinutes: number,
   now: Date,
   api: NotificationsApi = Notifications,
 ): Promise<number> {
   await cancelDeadlineReminders(api);
-  const schedule = computeReminderSchedule(deadline, intervalDays, now);
+  const schedule = computeReminderSchedule(deadline, intervalMinutes, now);
   for (const reminder of schedule) {
     await api.scheduleNotificationAsync({
       identifier: reminderIdentifier(reminder.kind),

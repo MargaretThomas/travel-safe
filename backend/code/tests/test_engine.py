@@ -1,11 +1,12 @@
 from deadman.engine import channels_for_contact, find_expired_users, trigger_user
+from deadman.switch import DAY_MINUTES
 from tests.conftest import FixedGeocoder
 
 
-def _expire(register, check_in, clock, interval=1):
-    account = register(interval=interval)
+def _expire(register, check_in, clock, interval_minutes=DAY_MINUTES):
+    account = register(interval_minutes=interval_minutes)
     check_in(account)
-    clock.advance(days=interval, seconds=1)
+    clock.advance(minutes=interval_minutes, seconds=1)
     return account
 
 
@@ -16,7 +17,7 @@ def test_channels_for_contact():
 
 
 def test_inactive_user_never_triggers(register, clock, run_worker):
-    register(interval=1)
+    register()
     clock.advance(days=400)
     assert run_worker().triggered_events == []
 

@@ -3,16 +3,56 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 from deadman.accounts import TokenPair
 from deadman.locations import LocationPoint
+from deadman.switch import (
+    MAX_INTERVAL_DAYS,
+    MAX_INTERVAL_MINUTES,
+    MIN_INTERVAL_MINUTES,
+    days_to_minutes,
+)
 
 
-class RegisterRequest(BaseModel):
+class IntervalRequest(BaseModel):
+    """The check-in interval in minutes.
+
+    `check_in_interval_days` is the older spelling, kept so clients built before
+    sub-day intervals existed keep working; it is folded into minutes on the way in.
+    """
+
+    check_in_interval_minutes: int | None = Field(
+        default=None, ge=MIN_INTERVAL_MINUTES, le=MAX_INTERVAL_MINUTES
+    )
+    check_in_interval_days: int | None = Field(default=None, ge=1, le=MAX_INTERVAL_DAYS)
+
+    @model_validator(mode="after")
+    def minutes_canonical(self) -> IntervalRequest:
+        if self.check_in_interval_days is not None:
+            if self.check_in_interval_minutes is not None:
+                raise ValueError("send check_in_interval_days or check_in_interval_minutes, not both")
+            self.check_in_interval_minutes = days_to_minutes(self.check_in_interval_days)
+        return self
+
+
+class RegisterRequest(IntervalRequest):
     name: str = Field(min_length=1, max_length=100)
-    check_in_interval_days: int = Field(ge=1, le=365)
     timezone: str | None = Field(default=None, max_length=64)
+
+    @model_validator(mode="after")
+    def interval_required(self) -> RegisterRequest:
+        if self.check_in_interval_minutes is None:
+            raise ValueError("check_in_interval_days or check_in_interval_minutes is required")
+        return self
+
+    @property
+    def interval_minutes(self) -> int:
+        """Narrowed by `interval_required`, so a registration can never reach the db without one."""
+        minutes = self.check_in_interval_minutes
+        if minutes is None:  # pragma: no cover - the validator above already rejected it
+            raise ValueError("check_in_interval_days or check_in_interval_minutes is required")
+        return minutes
 
 
 class LoginRequest(BaseModel):
@@ -47,10 +87,9 @@ class RegisterResponse(BaseModel):
     tokens: TokenResponse
 
 
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(IntervalRequest):
     name: str | None = Field(default=None, max_length=100)
     timezone: str | None = Field(default=None, max_length=64)
-    check_in_interval_days: int | None = Field(default=None, ge=1, le=365)
 
 
 class ContactPayload(BaseModel):
