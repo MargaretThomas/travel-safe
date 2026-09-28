@@ -45,7 +45,7 @@ def _from_prefixed_message(msg: str) -> tuple[str | None, str] | None:
 
 
 def _first_field(error: dict) -> str | None:
-    """The request field that failed, e.g. `check_in_interval_days`.
+    """The request field that failed, e.g. `check_in_interval_minutes`.
 
     The leading `body`/`query` segment is a source marker, not a field name, so
     skipping it is what makes the name usable in the app's field-level messages.
