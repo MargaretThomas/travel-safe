@@ -1,10 +1,11 @@
+import { createFakeRepository } from '@/db/fake-repository';
+import { INITIAL_SNAPSHOT, type LocalSnapshot } from '@/db/repository';
 import { AuthFailedError } from '@/lib/api/auth-session';
 import { ApiError, NetworkError } from '@/lib/api/client';
 import type { CheckInResponse, DeadmanApi, FullStatus, SwitchStatus } from '@/lib/api/deadman-api';
 import type { EmergencyContact } from '@/lib/contacts';
-import { createJsonStore, createMemoryBackend } from '@/lib/secure-storage';
 
-import { APP_STATE_KEY, createAppStore, INITIAL_PERSISTED, type AppStoreDeps, migratePersistedState } from './app-store';
+import { createAppStore, type AppStoreDeps } from './app-store';
 
 const NOW = new Date('2026-01-10T09:00:00Z');
 
@@ -19,6 +20,15 @@ const armed: SwitchStatus = {
   server_time: '2026-01-10T09:00:00.000000Z',
 };
 const fullStatus: FullStatus = { ...armed, latest_event: null };
+
+const profile = {
+  id: 'u',
+  name: 'Thandi',
+  timezone: null,
+  check_in_interval_minutes: 7 * 1440,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+};
 
 function checkInResponse(resolved: string[] = []): CheckInResponse {
   return {
@@ -39,19 +49,16 @@ const contact: EmergencyContact = {
   updated_at: armed.server_time,
 };
 
-function setup(apiOverrides: Partial<Record<keyof DeadmanApi, jest.Mock>> = {}, registered = true) {
-  const jsonStore = createJsonStore(createMemoryBackend());
+function setup(
+  apiOverrides: Partial<Record<keyof DeadmanApi, jest.Mock>> = {},
+  registered = true,
+  snapshot: Partial<LocalSnapshot> = {},
+) {
+  const repository = createFakeRepository({ snapshot });
   const api = {
     register: jest.fn(async () => ({})),
-    getProfile: jest.fn(),
-    updateProfile: jest.fn(async (patch: { name?: string }) => ({
-      id: 'u',
-      name: patch.name ?? 'Thandi',
-      timezone: null,
-      check_in_interval_minutes: 7 * 1440,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-    })),
+    getProfile: jest.fn(async () => profile),
+    updateProfile: jest.fn(async (patch: { name?: string }) => ({ ...profile, name: patch.name ?? 'Thandi' })),
     deleteProfile: jest.fn(async () => ({ archived: true, purge_after: '' })),
     logout: jest.fn(),
     checkIn: jest.fn(async () => checkInResponse()),
@@ -70,7 +77,7 @@ function setup(apiOverrides: Partial<Record<keyof DeadmanApi, jest.Mock>> = {}, 
   };
   const session = { hasCredentials: jest.fn(async () => registered), clear: jest.fn(async () => undefined) };
   const deps: AppStoreDeps = {
-    store: jsonStore,
+    repository: async () => repository,
     api: api as unknown as DeadmanApi,
     session,
     reminders,
@@ -80,41 +87,36 @@ function setup(apiOverrides: Partial<Record<keyof DeadmanApi, jest.Mock>> = {}, 
     timezone: () => 'Africa/Johannesburg',
   };
   const store = createAppStore(deps);
-  return { store, api, reminders, session, jsonStore };
+  return { store, api, reminders, session, repository };
 }
 
 describe('app store', () => {
-  it('hydrates persisted state and credentials', async () => {
-    const { store, jsonStore } = setup();
-    await jsonStore.set(APP_STATE_KEY, { ...INITIAL_PERSISTED, name: 'Thandi', onboardingComplete: true });
+  it('hydrates from the database and the keychain credentials', async () => {
+    const { store, repository } = setup({}, true, { name: 'Thandi', onboardingComplete: true });
+    expect(repository.state.name).toBe('Thandi');
     await store.getState().hydrate();
     expect(store.getState()).toMatchObject({ hydrated: true, registered: true, name: 'Thandi', onboardingComplete: true });
   });
 
-  it('carries a day-based interval forward from an older install', async () => {
-    const { store, jsonStore } = setup();
-    await jsonStore.set(APP_STATE_KEY, { name: 'Thandi', intervalDays: 30 });
-    await store.getState().hydrate();
-    expect(store.getState().intervalMinutes).toBe(30 * 1440);
-  });
-
   it('registers with the chosen interval and timezone', async () => {
-    const { store, api } = setup({}, false);
+    const { store, api, repository } = setup({}, false);
     await store.getState().hydrate();
     await store.getState().register('  Thandi ');
     expect(api.register).toHaveBeenCalledWith({ name: 'Thandi', intervalMinutes: 7 * 1440, timezone: 'Africa/Johannesburg' });
     expect(store.getState()).toMatchObject({ registered: true, name: 'Thandi' });
+    // The server id is adopted so later rows are keyed on the real account, not the placeholder.
+    expect(repository.state.users.map((u) => u.id)).toEqual(['u']);
   });
 
   it('records a synced check-in and reschedules reminders', async () => {
-    const { store, reminders, jsonStore } = setup();
+    const { store, reminders, repository } = setup();
     await store.getState().hydrate();
     const outcome = await store.getState().checkIn();
     expect(outcome.kind).toBe('synced');
     expect(store.getState().pending).toEqual([]);
     expect(store.getState().status?.next_deadline_at).toBe(armed.next_deadline_at);
     expect(reminders.schedule).toHaveBeenCalledWith(new Date('2026-01-17T09:00:00Z'), 7 * 1440, NOW);
-    expect((await jsonStore.get<{ status: unknown }>(APP_STATE_KEY))?.status).toBeTruthy();
+    expect(JSON.parse(repository.state.statusJson ?? 'null')).toBeTruthy();
   });
 
   it('keeps a check-in locally when the network is unavailable', async () => {
@@ -143,8 +145,9 @@ describe('app store', () => {
     await offline.store.getState().hydrate();
     await offline.store.getState().checkIn();
 
+    // A fresh store over the same repository stands in for the next cold start.
     const reopened = createAppStore({
-      store: offline.jsonStore,
+      repository: async () => offline.repository,
       api: { ...offline.api, checkIn: jest.fn(async () => checkInResponse()) } as unknown as DeadmanApi,
       session: offline.session,
       reminders: offline.reminders,
@@ -167,11 +170,14 @@ describe('app store', () => {
   });
 
   it('changes the interval on the server, then refreshes status', async () => {
-    const { store, api } = setup({ getStatus: jest.fn(async () => ({ ...fullStatus, check_in_interval_minutes: 30 * 1440 })) });
+    const { store, api, repository } = setup({
+      getStatus: jest.fn(async () => ({ ...fullStatus, check_in_interval_minutes: 30 * 1440 })),
+    });
     await store.getState().hydrate();
     await store.getState().setIntervalMinutes(30 * 1440);
     expect(api.updateProfile).toHaveBeenCalledWith({ check_in_interval_minutes: 30 * 1440 });
     expect(store.getState().intervalMinutes).toBe(30 * 1440);
+    expect(repository.state.intervalMinutes).toBe(30 * 1440);
   });
 
   it('saves an hourly interval', async () => {
@@ -192,7 +198,7 @@ describe('app store', () => {
   });
 
   it('manages contacts', async () => {
-    const { store } = setup();
+    const { store, repository } = setup();
     await store.getState().hydrate();
     await store.getState().loadContacts();
     expect(store.getState().contacts).toEqual([contact]);
@@ -200,11 +206,15 @@ describe('app store', () => {
     expect(store.getState().contacts[0].name).toBe('Sipho D');
     await store.getState().removeContact('k1');
     expect(store.getState().contacts).toEqual([]);
+    expect(repository.state.contacts).toEqual([]);
   });
 
   it('keeps cached contacts when offline', async () => {
-    const { store, jsonStore } = setup({ listContacts: jest.fn().mockRejectedValue(new NetworkError()) });
-    await jsonStore.set(APP_STATE_KEY, { ...INITIAL_PERSISTED, contacts: [contact] });
+    const { store } = setup(
+      { listContacts: jest.fn().mockRejectedValue(new NetworkError()) },
+      true,
+      { contacts: [contact] },
+    );
     await store.getState().hydrate();
     await store.getState().loadContacts();
     expect(store.getState().contacts).toEqual([contact]);
@@ -212,15 +222,11 @@ describe('app store', () => {
   });
 
   it('falls back to onboarding when the server no longer knows the account', async () => {
-    const { store, session, reminders, jsonStore } = setup({
-      getProfile: jest.fn().mockRejectedValue(new AuthFailedError()),
-    });
-    await jsonStore.set(APP_STATE_KEY, {
-      ...INITIAL_PERSISTED,
-      name: 'Thandi',
-      onboardingComplete: true,
-      contacts: [contact],
-    });
+    const { store, session, reminders, repository } = setup(
+      { getProfile: jest.fn().mockRejectedValue(new AuthFailedError()) },
+      true,
+      { name: 'Thandi', onboardingComplete: true, contacts: [contact] },
+    );
     await store.getState().hydrate();
     expect(store.getState().registered).toBe(false);
     expect(store.getState().onboardingComplete).toBe(false);
@@ -228,22 +234,21 @@ describe('app store', () => {
     expect(store.getState().contacts).toEqual([]);
     expect(session.clear).toHaveBeenCalled();
     expect(reminders.cancel).toHaveBeenCalled();
-    expect(await jsonStore.get(APP_STATE_KEY)).toBeNull();
+    expect(repository.state.contacts).toEqual([]);
   });
 
   it('keeps local state when the account check fails for a non-auth reason', async () => {
-    const { store, session, jsonStore } = setup({ getProfile: jest.fn().mockRejectedValue(new NetworkError()) });
-    await jsonStore.set(APP_STATE_KEY, {
-      ...INITIAL_PERSISTED,
-      name: 'Thandi',
-      onboardingComplete: true,
-      contacts: [contact],
-    });
+    const { store, session, repository } = setup(
+      { getProfile: jest.fn().mockRejectedValue(new NetworkError()) },
+      true,
+      { name: 'Thandi', onboardingComplete: true, contacts: [contact] },
+    );
     await store.getState().hydrate();
     expect(store.getState().registered).toBe(true);
     expect(store.getState().name).toBe('Thandi');
     expect(store.getState().contacts).toEqual([contact]);
     expect(session.clear).not.toHaveBeenCalled();
+    expect(repository.state.contacts).toEqual([contact]);
   });
 
   it('sends a test alert to a phone number before it is saved', async () => {
@@ -265,28 +270,13 @@ describe('app store', () => {
   });
 
   it('deletes the account and wipes local data', async () => {
-    const { store, session, reminders, jsonStore } = setup();
+    const { store, session, reminders, repository } = setup();
     await store.getState().hydrate();
     await store.getState().checkIn();
     await store.getState().deleteAccount();
     expect(session.clear).toHaveBeenCalled();
     expect(reminders.cancel).toHaveBeenCalled();
-    expect(await jsonStore.get(APP_STATE_KEY)).toBeNull();
+    expect(await repository.loadSnapshot()).toEqual(INITIAL_SNAPSHOT);
     expect(store.getState()).toMatchObject({ registered: false, onboardingComplete: false, status: null });
-  });
-});
-
-describe('migratePersistedState', () => {
-  it('converts a legacy day interval to minutes', () => {
-    expect(migratePersistedState({ name: 'Thandi', intervalDays: 30 })).toEqual({ name: 'Thandi', intervalMinutes: 43200 });
-  });
-
-  it('leaves current state alone, even when a stale day value is also present', () => {
-    expect(migratePersistedState({ intervalMinutes: 60, intervalDays: 30 })).toEqual({ intervalMinutes: 60, intervalDays: 30 });
-  });
-
-  it('handles missing state and state with no interval at all', () => {
-    expect(migratePersistedState(null)).toEqual({});
-    expect(migratePersistedState({ name: 'Thandi' })).toEqual({ name: 'Thandi' });
   });
 });

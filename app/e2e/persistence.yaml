@@ -1,0 +1,64 @@
+appId: makers.travel.safe
+---
+# Persistence: app state now lives in an encrypted SQLite database rather than a
+# single Keychain blob. The profile, the emergency contacts and the pending
+# check-in queue must all survive a cold restart, and a queued offline check-in
+# must still be there after a restart rather than being lost with the old blob.
+#
+# `stopApp` / `launchApp` without `clearState` is the point of this flow: it proves
+# the rows are read back out of the database on the next launch.
+# Android only: Maestro cannot toggle airplane mode on the iOS simulator.
+
+- runFlow: subflows/complete-onboarding.yaml
+
+# Record something only this run produced: a local check-in while offline.
+- setAirplaneMode: enabled
+- tapOn:
+    id: "check-in-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-pending-banner"
+    timeout: 20000
+
+# Cold restart. No clearState and no clearKeychain, so anything that was only in
+# memory, or still in the old Keychain blob, would not come back.
+- stopApp
+- setAirplaneMode: disabled
+- launchApp
+
+# Hydration has to finish before the app is usable, so the home screen appearing at
+# all is already an assertion that migrations ran before the first read.
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+
+# The queued check-in came back out of the `check_ins` table...
+- extendedWaitUntil:
+    visible:
+      id: "home-pending-banner"
+    timeout: 20000
+
+# ...and drains normally once the network is back, which means the queue rows were
+# real rows and not just re-rendered state.
+- tapOn:
+    id: "home-sync-now"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-pending-banner"
+    timeout: 20000
+
+# The profile survived in the settings row and the user row.
+- tapOn: "Account"
+- assertVisible:
+    id: "account-name"
+- assertVisible: "Thandi"
+
+# The contact added during onboarding came back out of `emergency_contacts`.
+- tapOn:
+    id: "account-contacts"
+- assertVisible:
+    id: "contacts-screen"
+- assertVisible:
+    id: "contact-row-0"
+- assertVisible: "Sipho Dlamini"

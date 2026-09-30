@@ -2,44 +2,17 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 
 import { AuthFailedError, type AuthSession } from '@/lib/api/auth-session';
 import type { DeadmanApi, DeviceState, FullStatus, LocationSample } from '@/lib/api/deadman-api';
-import type { PendingCheckIn } from '@/lib/check-in-queue';
 import { performCheckIn, type CheckInOutcome } from '@/lib/check-in-service';
 import type { EmergencyContact, NormalizedContact } from '@/lib/contacts';
-import { DAY_MINUTES, DEFAULT_INTERVAL_MINUTES, normalizeIntervalMinutes } from '@/lib/intervals';
-import type { JsonStore } from '@/lib/secure-storage';
+import { normalizeIntervalMinutes } from '@/lib/intervals';
 import { classifySyncError, reminderTarget, syncWithServer, type SyncError } from '@/lib/sync';
+import { INITIAL_SNAPSHOT, type LocalSnapshot, type Repository } from '@/db/repository';
 
-export const APP_STATE_KEY = 'app-state';
+export type SecuritySettings = LocalSnapshot['security'];
 
-export type SecuritySettings = { protectSettings: boolean; protectCheckIn: boolean };
-
-export type PersistedState = {
-  name: string | null;
-  onboardingComplete: boolean;
-  intervalMinutes: number;
-  profileCreatedAt: string | null;
-  status: FullStatus | null;
-  statusFetchedAt: string | null;
-  lastSyncAt: string | null;
-  pending: PendingCheckIn[];
-  contacts: EmergencyContact[];
-  security: SecuritySettings;
-  journeySharing: boolean;
-};
-
-export const INITIAL_PERSISTED: PersistedState = {
-  name: null,
-  onboardingComplete: false,
-  intervalMinutes: DEFAULT_INTERVAL_MINUTES,
-  profileCreatedAt: null,
-  status: null,
-  statusFetchedAt: null,
-  lastSyncAt: null,
-  pending: [],
-  contacts: [],
-  security: { protectSettings: true, protectCheckIn: false },
-  journeySharing: false,
-};
+/** Re-exported so feature code and tests keep importing from the store. */
+export type PersistedState = LocalSnapshot;
+export const INITIAL_PERSISTED = INITIAL_SNAPSHOT;
 
 export type ReminderPort = {
   schedule: (deadline: Date, intervalMinutes: number, now: Date) => Promise<unknown>;
@@ -48,7 +21,12 @@ export type ReminderPort = {
 };
 
 export type AppStoreDeps = {
-  store: JsonStore;
+  /**
+   * Resolved lazily rather than injected. A headless background task can reach the store
+   * before the UI has opened the database, so requiring a ready repository at construction
+   * time would mean ordering the two by hand at every call site.
+   */
+  repository: () => Promise<Repository>;
   api: DeadmanApi;
   session: Pick<AuthSession, 'hasCredentials' | 'clear'>;
   reminders: ReminderPort;
@@ -84,28 +62,7 @@ export type AppState = PersistedState & {
   deleteAccount: () => Promise<void>;
 };
 
-const PERSISTED_KEYS = Object.keys(INITIAL_PERSISTED) as (keyof PersistedState)[];
-
-/** Persisted state written before sub-day intervals existed kept the interval in days. */
-type StoredState = Partial<PersistedState> & { intervalDays?: number };
-
-/**
- * Reading a stale `intervalDays` as minutes would be catastrophic, and leaving it out
- * would show the default interval until the next successful sync, which reads as
- * "safer than it is" while offline.
- */
-export function migratePersistedState(saved: StoredState | null): Partial<PersistedState> {
-  if (!saved) return {};
-  if (saved.intervalMinutes !== undefined || saved.intervalDays === undefined) return saved;
-  const { intervalDays, ...rest } = saved;
-  return { ...rest, intervalMinutes: intervalDays * DAY_MINUTES };
-}
-
-function pickPersisted(state: AppState): PersistedState {
-  const out: Record<string, unknown> = {};
-  for (const key of PERSISTED_KEYS) out[key] = state[key];
-  return out as PersistedState;
-}
+const PERSISTED_KEYS = Object.keys(INITIAL_SNAPSHOT) as (keyof LocalSnapshot)[];
 
 function defaultTimezone(): string | undefined {
   try {
@@ -118,18 +75,62 @@ function defaultTimezone(): string | undefined {
 export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
   const now = deps.now ?? (() => new Date());
   const timezone = deps.timezone ?? defaultTimezone;
+  // Serialises writes so two rapid mutations cannot interleave their repository calls.
   let writes: Promise<void> = Promise.resolve();
 
   return createStore<AppState>()((set, get) => {
-    function persist(): Promise<void> {
-      const snapshot = pickPersisted(get());
-      writes = writes.then(() => deps.store.set(APP_STATE_KEY, snapshot)).catch(() => undefined);
+    function enqueueWrite(work: () => Promise<void>): Promise<void> {
+      writes = writes.then(work).catch(() => undefined);
       return writes;
+    }
+
+    /**
+     * Each persisted key maps to its own repository call rather than one blob write, so
+     * contacts and the check-in queue become real rows instead of a JSON string that has to
+     * be chunked around the Keychain's 2 KB limit.
+     */
+    async function persist(patch: Partial<AppState>): Promise<void> {
+      const keys = PERSISTED_KEYS.filter((key) => key in patch) as (keyof LocalSnapshot)[];
+      if (keys.length === 0) return;
+      const next = { ...INITIAL_SNAPSHOT, ...get(), ...patch };
+
+      await enqueueWrite(async () => {
+        const repository = await deps.repository();
+        if (keys.includes('name') || keys.includes('intervalMinutes') || keys.includes('profileCreatedAt')) {
+          await repository.saveProfile({
+            name: next.name ?? '',
+            intervalMinutes: next.intervalMinutes,
+            profileCreatedAt: next.profileCreatedAt,
+          });
+        }
+        // `saveStatus` owns `lastSyncAt` too, so all three move together and cannot drift.
+        if (keys.includes('status') || keys.includes('statusFetchedAt') || keys.includes('lastSyncAt')) {
+          await repository.saveStatus(next.status, next.statusFetchedAt);
+        }
+        if (keys.includes('contacts')) {
+          await repository.replaceContacts(await repository.currentUserId(), next.contacts);
+        }
+        if (keys.includes('pending')) {
+          await repository.replacePendingCheckIns(await repository.currentUserId(), next.pending);
+        }
+        if (
+          keys.includes('onboardingComplete') ||
+          keys.includes('security') ||
+          keys.includes('journeySharing')
+        ) {
+          await repository.saveSettings({
+            onboardingComplete: next.onboardingComplete,
+            protectSettings: next.security.protectSettings,
+            protectCheckIn: next.security.protectCheckIn,
+            journeySharing: next.journeySharing,
+          });
+        }
+      });
     }
 
     async function update(patch: Partial<AppState>): Promise<void> {
       set(patch);
-      await persist();
+      await persist(patch);
     }
 
     async function applyReminders(status: FullStatus | null): Promise<void> {
@@ -157,11 +158,11 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
       contactsError: null,
 
       async hydrate() {
-        const [saved, registered] = await Promise.all([
-          deps.store.get<StoredState>(APP_STATE_KEY).catch(() => null),
+        const [snapshot, registered] = await Promise.all([
+          deps.repository().then((r) => r.loadSnapshot()).catch(() => INITIAL_SNAPSHOT),
           deps.session.hasCredentials().catch(() => false),
         ]);
-        set({ ...INITIAL_PERSISTED, ...migratePersistedState(saved), registered, hydrated: true });
+        set({ ...INITIAL_SNAPSHOT, ...snapshot, registered, hydrated: true });
         if (registered) await get().verifyAccount();
       },
 
@@ -176,14 +177,16 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
        * so being offline can never cost the user their contacts or pending check-ins.
        */
       async verifyAccount() {
+        const repository = await deps.repository();
         try {
-          await deps.api.getProfile();
+          const profile = await deps.api.getProfile();
+          await repository.adoptServerProfile(profile);
         } catch (error) {
           if (!(error instanceof AuthFailedError)) return;
           await deps.reminders.cancel().catch(() => undefined);
           await deps.session.clear();
-          await deps.store.remove(APP_STATE_KEY);
-          set({ ...INITIAL_PERSISTED, registered: false, syncError: null, contactsError: null });
+          await repository.resetAll();
+          set({ ...INITIAL_SNAPSHOT, registered: false, syncError: null, contactsError: null });
         }
       },
 
@@ -194,6 +197,10 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
           return;
         }
         await deps.api.register({ name: trimmed, intervalMinutes: get().intervalMinutes, timezone: timezone() });
+        // Registration returns the id that every account-scoped row is keyed on, so any
+        // contacts carried over from a Keychain-only install move across here.
+        const profile = await deps.api.getProfile();
+        await deps.repository().then((r) => r.adoptServerProfile(profile));
         await update({ name: trimmed, registered: true, profileCreatedAt: now().toISOString() });
       },
 
@@ -320,8 +327,8 @@ export function createAppStore(deps: AppStoreDeps): StoreApi<AppState> {
         await deps.api.deleteProfile();
         await deps.reminders.cancel().catch(() => undefined);
         await deps.session.clear();
-        await deps.store.remove(APP_STATE_KEY);
-        set({ ...INITIAL_PERSISTED, registered: false, syncError: null, contactsError: null });
+        await deps.repository().then((r) => r.resetAll());
+        set({ ...INITIAL_SNAPSHOT, registered: false, syncError: null, contactsError: null });
       },
     };
   });
