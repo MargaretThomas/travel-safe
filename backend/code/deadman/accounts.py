@@ -71,7 +71,7 @@ def register(
     connection: sqlite3.Connection,
     *,
     name: str,
-    interval_days: int,
+    interval_minutes: int,
     timezone: str | None,
     now: datetime,
     settings: Settings,
@@ -82,11 +82,19 @@ def register(
         connection.execute(
             """
             INSERT INTO users (
-                id, name, timezone, account_key_hash, check_in_interval_days,
+                id, name, timezone, account_key_hash, check_in_interval_minutes,
                 switch_state, created_at, updated_at
             ) VALUES (?, ?, ?, ?, ?, 'inactive', ?, ?)
             """,
-            (user_id, name, timezone, hash_secret(account_key), interval_days, to_db(now), to_db(now)),
+            (
+                user_id,
+                name,
+                timezone,
+                hash_secret(account_key),
+                interval_minutes,
+                to_db(now),
+                to_db(now),
+            ),
         )
         tokens = _insert_session(connection, user_id, now, settings)
     return Registration(user_id=user_id, account_key=account_key, tokens=tokens)

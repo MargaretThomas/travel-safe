@@ -61,13 +61,16 @@ export async function cancelDeadlineReminders(api: NotificationsApi = Notificati
  */
 export async function scheduleDeadlineReminders(
   deadline: Date,
-  intervalDays: number,
+  intervalMinutes: number,
   now: Date,
   api: NotificationsApi = Notifications,
 ): Promise<number> {
   await cancelDeadlineReminders(api);
-  const schedule = computeReminderSchedule(deadline, intervalDays, now);
+  const schedule = computeReminderSchedule(deadline, intervalMinutes, now);
   for (const reminder of schedule) {
+    // expo-notifications turns the trigger into `Int(timestamp / 1000)` in Swift, and a
+    // non-finite value traps there: a SIGTRAP the JS `catch` above cannot recover from.
+    if (!Number.isFinite(reminder.fireAt.getTime())) continue;
     await api.scheduleNotificationAsync({
       identifier: reminderIdentifier(reminder.kind),
       content: {

@@ -42,12 +42,14 @@ appId: makers.travel.safe
 - tapOn:
     id: "onboarding-contacts-continue"
 
-# Interval presets with the required warning.
+# Interval presets with the required warning. The first preset is hourly.
 - assertVisible:
     id: "interval-warning"
 - assertVisible: "If you don’t check in before this period expires, your Travel Safe will be triggered."
+- assertVisible:
+    id: "interval-1h"
 - tapOn:
-    id: "interval-3"
+    id: "interval-3d"
 - tapOn:
     id: "onboarding-interval-continue"
 

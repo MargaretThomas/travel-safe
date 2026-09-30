@@ -32,19 +32,21 @@ On first run the app is not logged in, so it connects and writes a QR code to `q
 
 The HTTP server starts **before** pairing, so while the QR is waiting to be scanned `/send` returns `503 not connected to WhatsApp` (rather than refusing the connection) and `GET /health` reports `"connected": false`.
 
+The process stays in the foreground after pairing — it is the thing holding the WhatsApp socket open, so stopping it unlinks the device. `Ctrl-C` (or `SIGTERM`) shuts the HTTP server down and disconnects cleanly.
+
 > `store.db` is the paired session — the device keys that let this process send and
 > receive as the account. It is git-ignored and must never be committed or shared.
 
-To re-pair later (e.g. after logging out), stop the bot, delete `store.db` and `qr.png`, and run again.
+To re-pair later (e.g. after logging out), stop the bot, delete `store.db` and `qr.png`, and run again. A `store.db` holding a session that the server no longer accepts makes startup fail with a message saying so; that is the signal to delete it rather than retry.
 
 ## Configuration
 
-| Variable             | Description                                                    | Default       |
-| -------------------- | -------------------------------------------------------------- | ------------- |
-| `HOST`               | Interface to bind. Keep on loopback.                            | `127.0.0.1`   |
-| `PORT`               | HTTP port to listen on                                          | `8080`        |
-| `WHATSAPP_BOT_TOKEN` | Required bearer token for `POST /send`. Startup fails if unset.  | —             |
-| `PUSH_NAME`          | Name the phone shows for this linked device                     | `travel-safe` |
+| Variable             | Description                                                    | Default         |
+| -------------------- | -------------------------------------------------------------- | --------------- |
+| `HOST`               | Interface to bind. Keep on loopback.                            | `127.0.0.1`     |
+| `PORT`               | HTTP port to listen on                                          | `8080`          |
+| `WHATSAPP_BOT_TOKEN` | Required bearer token for `POST /send`. Startup fails if unset.  | —               |
+| `PUSH_NAME`          | Name shown on the linked device and to contacts                 | `whatsapp-bot`  |
 
 ## API
 

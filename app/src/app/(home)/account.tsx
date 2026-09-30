@@ -22,7 +22,7 @@ export default function AccountScreen() {
   const copy = strings.account;
   const name = useAppStore((state) => state.name);
   const createdAt = useAppStore((state) => state.profileCreatedAt);
-  const intervalDays = useAppStore((state) => state.intervalDays);
+  const intervalMinutes = useAppStore((state) => state.intervalMinutes);
   const contactCount = useAppStore((state) => state.contacts.length);
   const journeySharing = useAppStore((state) => state.journeySharing);
   const syncError = useAppStore((state) => state.syncError);
@@ -88,7 +88,7 @@ export default function AccountScreen() {
             <ListRow
               testID="account-interval"
               label={copy.intervalRow}
-              value={formatInterval(intervalDays)}
+              value={formatInterval(intervalMinutes)}
               onPress={() => guarded(() => router.push('/settings/interval'))}
             />
             <ListRow

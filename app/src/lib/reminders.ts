@@ -1,5 +1,5 @@
 import { getReminderOffsetsMs } from '@/lib/config';
-import { HOUR_MS, intervalMs } from '@/lib/intervals';
+import { HOUR_MS, intervalDurationMs, normalizeIntervalMinutes } from '@/lib/intervals';
 
 export type ReminderKind = 'reminder' | 'final' | 'expired';
 
@@ -25,17 +25,20 @@ export function buildReminderRules(
 
 export function computeReminderSchedule(
   deadline: Date,
-  intervalDays: number,
+  intervalMinutes: number,
   now: Date,
   rules: ReminderRule[] = buildReminderRules(),
 ): ScheduledReminder[] {
-  const span = intervalMs(intervalDays);
+  const span = intervalDurationMs(normalizeIntervalMinutes(intervalMinutes));
+  const nowMs = now.getTime();
   const seen = new Set<number>();
   const reminders: ScheduledReminder[] = [];
   for (const rule of rules) {
     const offset = Math.min(rule.offsetMs, span * rule.maxFractionOfInterval);
     const fireAt = deadline.getTime() - offset;
-    if (fireAt <= now.getTime() || seen.has(fireAt)) continue;
+    // A non-finite fire time is never schedulable, and `NaN <= nowMs` is false, so the
+    // past check alone would happily hand an Invalid Date to the native scheduler.
+    if (!Number.isFinite(fireAt) || fireAt <= nowMs || seen.has(fireAt)) continue;
     seen.add(fireAt);
     reminders.push({ kind: rule.kind, fireAt: new Date(fireAt) });
   }

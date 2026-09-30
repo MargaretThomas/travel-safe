@@ -35,24 +35,14 @@ const (
 	dbPath      = "store.db"
 	qrImagePath = "qr.png"
 	maxUpload   = 50 << 20
-
-	// How long to wait for WhatsApp to accept the connection before giving up on it, and
-	// how often to check while waiting.
-	readyTimeout = 90 * time.Second
-	readyPoll    = 200 * time.Millisecond
-
-	// How long in-flight requests get to finish on shutdown.
-	shutdownTimeout = 5 * time.Second
 )
 
 var phonePattern = regexp.MustCompile(`^\d{7,15}$`)
 
 type config struct {
-	host  string
-	port  string
-	token string
-	// The name the phone shows for this linked device. WhatsApp rejects presence updates
-	// without one and displays the account as offline, so it is never left empty.
+	host     string
+	port     string
+	token    string
 	pushName string
 }
 
@@ -60,10 +50,14 @@ func loadConfig() config {
 	cfg := config{
 		// Loopback by default: /send impersonates the paired account, so it must not
 		// be reachable from the LAN unless someone deliberately opts in.
-		host:     envOr("HOST", "127.0.0.1"),
-		port:     envOr("PORT", "8080"),
-		token:    os.Getenv("WHATSAPP_BOT_TOKEN"),
-		pushName: envOr("PUSH_NAME", "travel-safe"),
+		host:  envOr("HOST", "127.0.0.1"),
+		port:  envOr("PORT", "8080"),
+		token: os.Getenv("WHATSAPP_BOT_TOKEN"),
+		// WhatsApp shows this name on the linked device and to the people it
+		// messages. whatsmeow refuses to send presence without one, and an empty
+		// push name makes contacts see "-" as the sender, so default it rather
+		// than let the gateway come up unnamed.
+		pushName: envOr("PUSH_NAME", "whatsapp-bot"),
 	}
 	if cfg.token == "" {
 		// Failing closed beats running an unauthenticated send endpoint. The
@@ -111,22 +105,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to get device: %v", err)
 	}
-
-	// A session paired without a push name (or by an older build) cannot send presence and
-	// shows up offline on the phone, so give it one. On a brand new device the row is only
-	// written during pairing, and that save carries this field with it.
-	if device.PushName == "" {
-		device.PushName = cfg.pushName
-		if device.ID != nil {
-			if err := device.Save(ctx); err != nil {
-				log.Printf("failed to save the push name: %v", err)
-			}
-		}
-	}
+	// Set before the client is built: whatsmeow reads the push name off the store
+	// when it reports presence, and WhatsApp keeps showing the old name until it
+	// has been sent at least once over a live socket.
+	device.PushName = cfg.pushName
 
 	clientLog := waLog.Stdout("Client", "WARN", true)
 	cli := whatsmeow.NewClient(device, clientLog)
 
+	// A logout is terminal: the session in store.db can no longer authenticate, and
+	// this process cannot re-pair on its own. Exiting non-zero means a supervisor
+	// restarts us into a visible failure instead of leaving a process running whose
+	// socket is dead and whose only symptom is a permanent 503 from /send.
+	loggedOut := make(chan struct{})
 	cli.AddEventHandler(func(evt any) {
 		switch e := evt.(type) {
 		case *events.Message:
@@ -136,7 +127,13 @@ func main() {
 		case *events.Disconnected:
 			log.Println("disconnected from WhatsApp")
 		case *events.LoggedOut:
-			log.Println("logged out, delete store.db and re-pair")
+			log.Printf("logged out (%v): stop the bot, delete %s and %s, then run again to re-pair",
+				e.Reason, dbPath, qrImagePath)
+			select {
+			case <-loggedOut:
+			default:
+				close(loggedOut)
+			}
 		}
 	})
 
@@ -179,12 +176,14 @@ func main() {
 	}()
 	log.Printf("gateway listening on http://%s (POST /send requires a bearer token)", address)
 
-	// Pair only when the store holds no device yet. cli.IsLoggedIn() reports the live
-	// socket state, so it is false for the whole life of a freshly started process: testing
-	// it here sent every restart after a successful pairing back down the QR path, where
-	// whatsmeow refuses to issue a code for a store that already has a device id
-	// (ErrQRStoreContainsID) and the gateway died on every launch.
-	if device.ID == nil {
+	if !cli.IsLoggedIn() {
+		if device.ID != nil {
+			// store.db still holds an identity that the server no longer accepts, so
+			// whatsmeow will refuse to hand out a QR code. Say what to delete rather
+			// than surfacing a library error about a user ID in the store.
+			log.Fatalf("%s holds a session that is no longer logged in; delete it (and %s) and run again to re-pair",
+				dbPath, qrImagePath)
+		}
 		if err := pairWithQR(ctx, cli); err != nil {
 			log.Fatalf("pairing failed: %v", err)
 		}
@@ -192,56 +191,30 @@ func main() {
 		log.Fatalf("failed to connect: %v", err)
 	}
 
-	// Pairing returns at PairSuccess, which is *before* WhatsApp has accepted the new
-	// connection: whatsmeow drops the pairing socket on purpose and reconnects. Both
-	// /send and /health need that live socket, so wait for it instead of announcing a
-	// connection that is about to be replaced. A timeout is a warning, not a fatal error:
-	// /health reports the truth and whatsmeow keeps retrying on its own.
-	if waitForReady(ctx, cli, readyTimeout) {
-		if err := cli.SendPresence(ctx, types.PresenceAvailable); err != nil {
-			log.Printf("failed to send presence: %v", err)
-		}
-		log.Println("ready: WhatsApp connected")
-	} else {
-		log.Printf("warning: not connected to WhatsApp after %s; /send answers 503 until it is", readyTimeout)
+	if err := cli.SendPresence(ctx, types.PresenceAvailable); err != nil {
+		log.Printf("failed to send presence: %v", err)
+	}
+	log.Println("ready: WhatsApp connected")
+
+	// main returning ends the process, and with it the WhatsApp socket and the HTTP
+	// server: the linked device drops straight back off WhatsApp, which reads as a
+	// failed link even though pairing itself reported success. Block here until a
+	// signal (or a logout) asks us to stop.
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case <-signalCtx.Done():
+		log.Println("shutting down")
+	case <-loggedOut:
 	}
 
-	// Nothing blocks from here on, and a Go program exits the moment main returns, taking
-	// the listener with it. That is why the gateway used to die straight after pairing and
-	// leave dev.sh restarting a session that was already valid. Park until a signal arrives
-	// and then shut down in order, so the socket and the database are closed cleanly.
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-	<-signals
-	signal.Stop(signals)
-	log.Println("shutting down")
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Printf("the http server did not stop cleanly: %v", err)
+		log.Printf("http shutdown: %v", err)
 	}
 	cli.Disconnect()
-	if err := container.Close(); err != nil {
-		log.Printf("failed to close the database: %v", err)
-	}
-}
-
-// waitForReady blocks until the client holds a socket that WhatsApp has accepted, i.e.
-// until /health would report connected:true.
-func waitForReady(ctx context.Context, cli *whatsmeow.Client, timeout time.Duration) bool {
-	deadline := time.Now().Add(timeout)
-	for !cli.IsConnected() || !cli.IsLoggedIn() {
-		if !time.Now().Before(deadline) {
-			return false
-		}
-		select {
-		case <-ctx.Done():
-			return cli.IsConnected() && cli.IsLoggedIn()
-		case <-time.After(readyPoll):
-		}
-	}
-	return true
 }
 
 func pairWithQR(ctx context.Context, cli *whatsmeow.Client) error {
