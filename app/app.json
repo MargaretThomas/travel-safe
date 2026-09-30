@@ -69,6 +69,12 @@
           "configureAndroidBackup": true,
           "faceIDPermission": "Allow Travel Safe to access your Face ID biometric data."
         }
+      ],
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
       ]
     ],
     "experiments": {

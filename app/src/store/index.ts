@@ -4,17 +4,21 @@ import type { StoreApi } from 'zustand/vanilla';
 import { readDeviceState } from '@/lib/device-state';
 import { captureCurrentLocation } from '@/lib/location';
 import { cancelDeadlineReminders, notifyCheckInSynced, scheduleDeadlineReminders } from '@/lib/notifications';
-import { getServices } from '@/lib/services';
+import { getAuthServices, startServices } from '@/lib/services';
 import { createAppStore, type AppState } from '@/store/app-store';
 
 let instance: StoreApi<AppState> | null = null;
 
-/** Shared by screens and headless background tasks. */
+/**
+ * Shared by screens and headless background tasks. Stays synchronous: only the repository
+ * needs the database, and it is resolved on demand, so a background task that launches
+ * without the UI still gets a working store.
+ */
 export function getAppStore(): StoreApi<AppState> {
   if (!instance) {
-    const { store, session, api } = getServices();
+    const { session, api } = getAuthServices();
     instance = createAppStore({
-      store,
+      repository: async () => (await startServices()).repository,
       session,
       api,
       captureLocation: () => captureCurrentLocation(),
