@@ -59,7 +59,7 @@ export const strings = {
       usedFor: 'Used for',
       why: 'Why',
       ifDenied: 'If you say no',
-      allow: 'Allow',
+      allow: 'Continue',
       granted: 'Allowed',
       denied: 'Not allowed',
       noPermissionNeeded: 'No permission needed',

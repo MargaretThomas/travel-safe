@@ -2,7 +2,7 @@
   "expo": {
     "name": "Travel Safe",
     "slug": "travel-safe",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "travelsafe",
