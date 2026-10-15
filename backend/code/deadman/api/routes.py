@@ -35,10 +35,11 @@ def _device(payload) -> DeviceState | None:
 
 @router.post("/auth/register", status_code=201)
 def register(payload: RegisterRequest, db: Db, now: Now, settings: AppSettings) -> RegisterResponse:
+    # The schema guarantees one of the two spellings arrived, resolved to minutes.
     result = accounts.register(
         db,
         name=validate_name(payload.name),
-        interval_days=payload.check_in_interval_days,
+        interval_minutes=payload.interval_minutes,
         timezone=payload.timezone,
         now=now,
         settings=settings,
@@ -83,7 +84,7 @@ def update_me(payload: ProfileUpdate, db: Db, now: Now, user_id: UserId) -> dict
         now=now,
         name=payload.name,
         timezone=payload.timezone,
-        interval_days=payload.check_in_interval_days,
+        interval_minutes=payload.check_in_interval_minutes,
     )
 
 

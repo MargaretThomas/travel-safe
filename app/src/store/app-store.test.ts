@@ -4,13 +4,13 @@ import type { CheckInResponse, DeadmanApi, FullStatus, SwitchStatus } from '@/li
 import type { EmergencyContact } from '@/lib/contacts';
 import { createJsonStore, createMemoryBackend } from '@/lib/secure-storage';
 
-import { APP_STATE_KEY, createAppStore, INITIAL_PERSISTED, type AppStoreDeps } from './app-store';
+import { APP_STATE_KEY, createAppStore, INITIAL_PERSISTED, type AppStoreDeps, migratePersistedState } from './app-store';
 
 const NOW = new Date('2026-01-10T09:00:00Z');
 
 const armed: SwitchStatus = {
   state: 'armed',
-  check_in_interval_days: 7,
+  check_in_interval_minutes: 7 * 1440,
   last_check_in_at: '2026-01-10T09:00:00.000000Z',
   next_deadline_at: '2026-01-17T09:00:00.000000Z',
   seconds_remaining: 7 * 86400,
@@ -48,7 +48,7 @@ function setup(apiOverrides: Partial<Record<keyof DeadmanApi, jest.Mock>> = {}, 
       id: 'u',
       name: patch.name ?? 'Thandi',
       timezone: null,
-      check_in_interval_days: 7,
+      check_in_interval_minutes: 7 * 1440,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     })),
@@ -91,11 +91,18 @@ describe('app store', () => {
     expect(store.getState()).toMatchObject({ hydrated: true, registered: true, name: 'Thandi', onboardingComplete: true });
   });
 
+  it('carries a day-based interval forward from an older install', async () => {
+    const { store, jsonStore } = setup();
+    await jsonStore.set(APP_STATE_KEY, { name: 'Thandi', intervalDays: 30 });
+    await store.getState().hydrate();
+    expect(store.getState().intervalMinutes).toBe(30 * 1440);
+  });
+
   it('registers with the chosen interval and timezone', async () => {
     const { store, api } = setup({}, false);
     await store.getState().hydrate();
     await store.getState().register('  Thandi ');
-    expect(api.register).toHaveBeenCalledWith({ name: 'Thandi', intervalDays: 7, timezone: 'Africa/Johannesburg' });
+    expect(api.register).toHaveBeenCalledWith({ name: 'Thandi', intervalMinutes: 7 * 1440, timezone: 'Africa/Johannesburg' });
     expect(store.getState()).toMatchObject({ registered: true, name: 'Thandi' });
   });
 
@@ -106,7 +113,7 @@ describe('app store', () => {
     expect(outcome.kind).toBe('synced');
     expect(store.getState().pending).toEqual([]);
     expect(store.getState().status?.next_deadline_at).toBe(armed.next_deadline_at);
-    expect(reminders.schedule).toHaveBeenCalledWith(new Date('2026-01-17T09:00:00Z'), 7, NOW);
+    expect(reminders.schedule).toHaveBeenCalledWith(new Date('2026-01-17T09:00:00Z'), 7 * 1440, NOW);
     expect((await jsonStore.get<{ status: unknown }>(APP_STATE_KEY))?.status).toBeTruthy();
   });
 
@@ -160,11 +167,19 @@ describe('app store', () => {
   });
 
   it('changes the interval on the server, then refreshes status', async () => {
-    const { store, api } = setup({ getStatus: jest.fn(async () => ({ ...fullStatus, check_in_interval_days: 30 })) });
+    const { store, api } = setup({ getStatus: jest.fn(async () => ({ ...fullStatus, check_in_interval_minutes: 30 * 1440 })) });
     await store.getState().hydrate();
-    await store.getState().setIntervalDays(30);
-    expect(api.updateProfile).toHaveBeenCalledWith({ check_in_interval_days: 30 });
-    expect(store.getState().intervalDays).toBe(30);
+    await store.getState().setIntervalMinutes(30 * 1440);
+    expect(api.updateProfile).toHaveBeenCalledWith({ check_in_interval_minutes: 30 * 1440 });
+    expect(store.getState().intervalMinutes).toBe(30 * 1440);
+  });
+
+  it('saves an hourly interval', async () => {
+    const { store, api } = setup({ getStatus: jest.fn(async () => ({ ...fullStatus, check_in_interval_minutes: 60 })) });
+    await store.getState().hydrate();
+    await store.getState().setIntervalMinutes(60);
+    expect(api.updateProfile).toHaveBeenCalledWith({ check_in_interval_minutes: 60 });
+    expect(store.getState().intervalMinutes).toBe(60);
   });
 
   it('propagates interval conflicts to the screen', async () => {
@@ -172,8 +187,8 @@ describe('app store', () => {
       updateProfile: jest.fn().mockRejectedValue(new ApiError('x', 409, 'interval_would_expire')),
     });
     await store.getState().hydrate();
-    await expect(store.getState().setIntervalDays(1)).rejects.toMatchObject({ code: 'interval_would_expire' });
-    expect(store.getState().intervalDays).toBe(7);
+    await expect(store.getState().setIntervalMinutes(60)).rejects.toMatchObject({ code: 'interval_would_expire' });
+    expect(store.getState().intervalMinutes).toBe(7 * 1440);
   });
 
   it('manages contacts', async () => {
@@ -258,5 +273,20 @@ describe('app store', () => {
     expect(reminders.cancel).toHaveBeenCalled();
     expect(await jsonStore.get(APP_STATE_KEY)).toBeNull();
     expect(store.getState()).toMatchObject({ registered: false, onboardingComplete: false, status: null });
+  });
+});
+
+describe('migratePersistedState', () => {
+  it('converts a legacy day interval to minutes', () => {
+    expect(migratePersistedState({ name: 'Thandi', intervalDays: 30 })).toEqual({ name: 'Thandi', intervalMinutes: 43200 });
+  });
+
+  it('leaves current state alone, even when a stale day value is also present', () => {
+    expect(migratePersistedState({ intervalMinutes: 60, intervalDays: 30 })).toEqual({ intervalMinutes: 60, intervalDays: 30 });
+  });
+
+  it('handles missing state and state with no interval at all', () => {
+    expect(migratePersistedState(null)).toEqual({});
+    expect(migratePersistedState({ name: 'Thandi' })).toEqual({ name: 'Thandi' });
   });
 });

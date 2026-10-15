@@ -5,11 +5,12 @@ import pytest
 from deadman import accounts
 from deadman.errors import AuthError
 from deadman.security import hash_secret
+from deadman.switch import DAY_MINUTES
 from tests.conftest import START
 
 
 def _register(db, settings, now=START):
-    return accounts.register(db, name="Thandi", interval_days=7, timezone=None, now=now, settings=settings)
+    return accounts.register(db, name="Thandi", interval_minutes=7 * DAY_MINUTES, timezone=None, now=now, settings=settings)
 
 
 def test_register_stores_only_hashes(db, settings):

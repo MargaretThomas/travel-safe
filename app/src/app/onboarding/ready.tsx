@@ -15,7 +15,7 @@ import { useAppStore } from '@/store';
 
 export default function ReadyScreen() {
   const copy = strings.onboarding.ready;
-  const intervalDays = useAppStore((state) => state.intervalDays);
+  const intervalMinutes = useAppStore((state) => state.intervalMinutes);
   const contactCount = useAppStore((state) => state.contacts.length);
   const checkIn = useAppStore((state) => state.checkIn);
   const completeOnboarding = useAppStore((state) => state.completeOnboarding);
@@ -47,7 +47,7 @@ export default function ReadyScreen() {
       }>
       <FeatureCard>
         <View style={styles.rows}>
-          <ListRow testID="ready-interval" label={copy.summaryInterval} value={formatInterval(intervalDays)} />
+          <ListRow testID="ready-interval" label={copy.summaryInterval} value={formatInterval(intervalMinutes)} />
           <ListRow
             testID="ready-contacts"
             label={copy.summaryContacts}

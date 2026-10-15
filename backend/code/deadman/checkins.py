@@ -79,13 +79,13 @@ def record_check_in(
             return CheckInResult(_check_in_dict(existing), created=False, resolved_event_ids=[])
 
         user = connection.execute(
-            "SELECT check_in_interval_days, switch_state FROM users WHERE id = ? AND archived_at IS NULL",
+            "SELECT check_in_interval_minutes, switch_state FROM users WHERE id = ? AND archived_at IS NULL",
             (user_id,),
         ).fetchone()
         if user is None:
             raise NotFoundError("user_not_found")
 
-        deadline = compute_deadline(now, int(user["check_in_interval_days"]))
+        deadline = compute_deadline(now, int(user["check_in_interval_minutes"]))
         check_in_id = new_id()
         connection.execute(
             """

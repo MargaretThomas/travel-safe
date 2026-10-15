@@ -1,5 +1,5 @@
 import type { SwitchStatus } from './api/deadman-api';
-import { DAY_MS, HOUR_MS } from './intervals';
+import { DAY_MINUTES, DAY_MS, HOUR_MS } from './intervals';
 import { deriveHomeStatus, dueSoonThresholdMs, remainingFromServer } from './status';
 
 const NOW = new Date('2026-01-10T09:00:00Z');
@@ -7,7 +7,7 @@ const NOW = new Date('2026-01-10T09:00:00Z');
 function server(overrides: Partial<SwitchStatus> = {}): SwitchStatus {
   return {
     state: 'armed',
-    check_in_interval_days: 7,
+    check_in_interval_minutes: 7 * DAY_MINUTES,
     last_check_in_at: '2026-01-09T09:00:00.000000Z',
     next_deadline_at: '2026-01-16T09:00:00.000000Z',
     seconds_remaining: 6 * 86400,
@@ -22,12 +22,12 @@ const pendingItem = { clientId: 'ci', occurredAt: NOW.toISOString(), location: n
 
 describe('deriveHomeStatus', () => {
   it('asks for a first check-in before the switch is armed', () => {
-    const status = deriveHomeStatus({ server: server({ state: 'inactive' }), fetchedAt: NOW, pending: [], intervalDays: 7, now: NOW });
+    const status = deriveHomeStatus({ server: server({ state: 'inactive' }), fetchedAt: NOW, pending: [], intervalMinutes: 7 * DAY_MINUTES, now: NOW });
     expect(status.tone).toBe('setup');
   });
 
   it('is safe with plenty of time left', () => {
-    const status = deriveHomeStatus({ server: server(), fetchedAt: NOW, pending: [], intervalDays: 7, now: NOW });
+    const status = deriveHomeStatus({ server: server(), fetchedAt: NOW, pending: [], intervalMinutes: 7 * DAY_MINUTES, now: NOW });
     expect(status).toMatchObject({ tone: 'safe', remainingMs: 6 * DAY_MS, hasUnsyncedCheckIn: false });
     expect(status.deadline?.toISOString()).toBe('2026-01-16T09:00:00.000Z');
   });
@@ -37,7 +37,7 @@ describe('deriveHomeStatus', () => {
       server: server({ seconds_remaining: 3600 }),
       fetchedAt: NOW,
       pending: [],
-      intervalDays: 7,
+      intervalMinutes: 7 * DAY_MINUTES,
       now: NOW,
     });
     expect(status.tone).toBe('due_soon');
@@ -48,25 +48,25 @@ describe('deriveHomeStatus', () => {
       server: server({ seconds_remaining: 60 }),
       fetchedAt: NOW,
       pending: [],
-      intervalDays: 7,
+      intervalMinutes: 7 * DAY_MINUTES,
       now: new Date(NOW.getTime() + 2 * 60_000),
     });
     expect(status.tone).toBe('overdue');
   });
 
   it('shows the triggered state from the server', () => {
-    const status = deriveHomeStatus({ server: server({ state: 'triggered' }), fetchedAt: NOW, pending: [], intervalDays: 7, now: NOW });
+    const status = deriveHomeStatus({ server: server({ state: 'triggered' }), fetchedAt: NOW, pending: [], intervalMinutes: 7 * DAY_MINUTES, now: NOW });
     expect(status.tone).toBe('triggered');
   });
 
   it('flags unsynced check-ins without pretending the deadline moved', () => {
-    const status = deriveHomeStatus({ server: server(), fetchedAt: NOW, pending: [pendingItem], intervalDays: 7, now: NOW });
+    const status = deriveHomeStatus({ server: server(), fetchedAt: NOW, pending: [pendingItem], intervalMinutes: 7 * DAY_MINUTES, now: NOW });
     expect(status.hasUnsyncedCheckIn).toBe(true);
     expect(status.deadline?.toISOString()).toBe('2026-01-16T09:00:00.000Z');
   });
 
   it('treats an offline first check-in as locally safe but unsynced', () => {
-    const status = deriveHomeStatus({ server: null, fetchedAt: null, pending: [pendingItem], intervalDays: 7, now: NOW });
+    const status = deriveHomeStatus({ server: null, fetchedAt: null, pending: [pendingItem], intervalMinutes: 7 * DAY_MINUTES, now: NOW });
     expect(status).toMatchObject({ tone: 'safe', deadline: null, hasUnsyncedCheckIn: true });
   });
 
@@ -76,7 +76,11 @@ describe('deriveHomeStatus', () => {
   });
 
   it('caps the due-soon threshold at one day', () => {
-    expect(dueSoonThresholdMs(1)).toBe(6 * HOUR_MS);
-    expect(dueSoonThresholdMs(30)).toBe(DAY_MS);
+    expect(dueSoonThresholdMs(DAY_MINUTES)).toBe(6 * HOUR_MS);
+    expect(dueSoonThresholdMs(30 * DAY_MINUTES)).toBe(DAY_MS);
+  });
+
+  it('keeps the due-soon threshold usable on an hourly interval', () => {
+    expect(dueSoonThresholdMs(60)).toBe(15 * 60_000);
   });
 });

@@ -3,10 +3,7 @@
 store.db
 store.db-shm
 store.db-wal
-<<<<<<< HEAD
 store.db-journal
-=======
->>>>>>> 778871709678469ee202671dc4214cfcb9a62daa
 
 # Pairing artefact, written on first run and removed on successful pairing.
 qr.png

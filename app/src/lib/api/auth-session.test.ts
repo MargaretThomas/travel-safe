@@ -38,7 +38,7 @@ const saved: Credentials = {
 describe('AuthSession', () => {
   it('registers and stores credentials securely', async () => {
     const { session, store } = setup(() => ({ user_id: 'u1', account_key: 'ak_1', tokens: tokens('new') }));
-    await session.register({ name: 'Thandi', intervalDays: 7, timezone: 'Africa/Johannesburg' });
+    await session.register({ name: 'Thandi', intervalMinutes: 60, timezone: 'Africa/Johannesburg' });
     await expect(store.get(CREDENTIALS_KEY)).resolves.toMatchObject({
       userId: 'u1',
       accountKey: 'ak_1',

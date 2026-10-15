@@ -20,7 +20,7 @@ export function getAppStore(): StoreApi<AppState> {
       captureLocation: () => captureCurrentLocation(),
       readDevice: () => readDeviceState(),
       reminders: {
-        schedule: (deadline, intervalDays, now) => scheduleDeadlineReminders(deadline, intervalDays, now),
+        schedule: (deadline, intervalMinutes, now) => scheduleDeadlineReminders(deadline, intervalMinutes, now),
         cancel: () => cancelDeadlineReminders(),
         notifySynced: (deadline, now) => notifyCheckInSynced(deadline, now),
       },

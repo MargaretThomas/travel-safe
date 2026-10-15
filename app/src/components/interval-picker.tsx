@@ -5,23 +5,27 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatInterval, INTERVAL_PRESETS } from '@/lib/intervals';
 
-export type IntervalPickerProps = { value: number; onChange: (days: number) => void; disabled?: boolean };
+export type IntervalPickerProps = {
+  value: number;
+  onChange: (minutes: number) => void;
+  disabled?: boolean;
+};
 
 export function IntervalPicker({ value, onChange, disabled = false }: IntervalPickerProps) {
   const theme = useTheme();
 
   return (
     <View style={styles.grid} accessibilityRole="radiogroup">
-      {INTERVAL_PRESETS.map((days) => {
-        const selected = days === value;
+      {INTERVAL_PRESETS.map(({ minutes, key }) => {
+        const selected = minutes === value;
         return (
           <Pressable
-            key={days}
-            testID={`interval-${days}`}
+            key={key}
+            testID={`interval-${key}`}
             accessibilityRole="radio"
             accessibilityState={{ selected, disabled }}
             disabled={disabled}
-            onPress={() => onChange(days)}
+            onPress={() => onChange(minutes)}
             style={({ pressed }) => [
               styles.option,
               {
@@ -30,7 +34,7 @@ export function IntervalPicker({ value, onChange, disabled = false }: IntervalPi
               },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type={selected ? 'smallBold' : 'small'}>{formatInterval(days)}</ThemedText>
+            <ThemedText type={selected ? 'smallBold' : 'small'}>{formatInterval(minutes)}</ThemedText>
           </Pressable>
         );
       })}

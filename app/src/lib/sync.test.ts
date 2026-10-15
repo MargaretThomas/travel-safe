@@ -1,13 +1,14 @@
 import { ApiError, NetworkError } from './api/client';
 import type { CheckInResponse, FullStatus } from './api/deadman-api';
 import type { PendingCheckIn } from './check-in-queue';
+import { DEFAULT_INTERVAL_MINUTES } from './intervals';
 import { classifySyncError, reminderTarget, shouldSyncOnForeground, syncWithServer } from './sync';
 
 const NOW = new Date('2026-01-10T09:00:00Z');
 
 const status: FullStatus = {
   state: 'armed',
-  check_in_interval_days: 7,
+  check_in_interval_minutes: 7 * 1440,
   last_check_in_at: '2026-01-10T09:00:00.000000Z',
   next_deadline_at: '2026-01-17T09:00:00.000000Z',
   seconds_remaining: 7 * 86400,
@@ -71,10 +72,22 @@ describe('helpers', () => {
   });
 
   it('only schedules reminders for an armed switch', () => {
-    expect(reminderTarget(status)).toEqual({ deadline: new Date('2026-01-17T09:00:00Z'), intervalDays: 7 });
+    expect(reminderTarget(status)).toEqual({ deadline: new Date('2026-01-17T09:00:00Z'), intervalMinutes: 7 * 1440 });
     expect(reminderTarget({ ...status, state: 'triggered' })).toBeNull();
     expect(reminderTarget({ ...status, state: 'inactive', next_deadline_at: null })).toBeNull();
     expect(reminderTarget(null)).toBeNull();
+  });
+
+  it('still schedules reminders when the server sends an unusable interval', () => {
+    const withoutInterval = { ...status, check_in_interval_minutes: undefined as unknown as number };
+    expect(reminderTarget(withoutInterval)).toEqual({
+      deadline: new Date('2026-01-17T09:00:00Z'),
+      intervalMinutes: DEFAULT_INTERVAL_MINUTES,
+    });
+    expect(reminderTarget({ ...status, check_in_interval_minutes: NaN })).toEqual({
+      deadline: new Date('2026-01-17T09:00:00Z'),
+      intervalMinutes: DEFAULT_INTERVAL_MINUTES,
+    });
   });
 
   it('syncs on foreground when reopened after backgrounding, without hammering the API', () => {

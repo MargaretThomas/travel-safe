@@ -202,10 +202,52 @@ MIGRATIONS: tuple[str, ...] = (
         SELECT l.link_id FROM notification_links l
         JOIN notification_events ne ON ne.id = l.notification_event_id
     );
+    -- Anything still pointing at a purged notification is detached. Stated here rather than
+    -- left to the DROP's ON DELETE SET NULL cascade, which only fires when foreign key
+    -- enforcement happens to be on.
+    UPDATE emergency_links
+    SET notification_event_id = NULL
+    WHERE notification_event_id IS NOT NULL
+      AND notification_event_id NOT IN (SELECT id FROM notification_events);
     DROP TABLE notification_links;
 
     CREATE INDEX idx_notifications_status ON notification_events (status);
     CREATE INDEX idx_notifications_provider ON notification_events (provider_message_id);
+    """,
+    """
+    -- The interval became minute-based so a "check in every hour" option fits, and
+    -- days could not carry it. The column's CHECK constraint cannot be altered in
+    -- place, so users is rebuilt and its rows converted.
+    CREATE TABLE users_new (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        timezone TEXT,
+        account_key_hash TEXT NOT NULL UNIQUE,
+        check_in_interval_minutes INTEGER NOT NULL
+            CHECK (check_in_interval_minutes BETWEEN 60 AND 525600),
+        switch_state TEXT NOT NULL DEFAULT 'inactive'
+            CHECK (switch_state IN ('inactive', 'armed', 'triggered', 'archived')),
+        last_check_in_at TEXT,
+        next_deadline_at TEXT,
+        battery_level REAL CHECK (battery_level IS NULL OR battery_level BETWEEN 0 AND 1),
+        low_power_mode INTEGER,
+        device_reported_at TEXT,
+        archived_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    INSERT INTO users_new (
+        id, name, timezone, account_key_hash, check_in_interval_minutes, switch_state,
+        last_check_in_at, next_deadline_at, battery_level, low_power_mode, device_reported_at,
+        archived_at, created_at, updated_at
+    )
+    SELECT id, name, timezone, account_key_hash, check_in_interval_days * 1440, switch_state,
+           last_check_in_at, next_deadline_at, battery_level, low_power_mode, device_reported_at,
+           archived_at, created_at, updated_at
+    FROM users;
+    DROP TABLE users;
+    ALTER TABLE users_new RENAME TO users;
+    CREATE INDEX idx_users_state_deadline ON users (switch_state, next_deadline_at);
     """,
 )
 
@@ -224,8 +266,21 @@ def open_connection(db_path: str) -> sqlite3.Connection:
 
 def migrate(connection: sqlite3.Connection) -> None:
     version = connection.execute("PRAGMA user_version").fetchone()[0]
-    for index, script in enumerate(MIGRATIONS[version:], start=version + 1):
-        connection.executescript(f"BEGIN;\n{script}\nPRAGMA user_version = {index};\nCOMMIT;")
+    if version >= len(MIGRATIONS):
+        return
+    # Some migrations rebuild a table other tables reference. SQLite turns DROP TABLE on
+    # such a table into an implicit DELETE and would cascade that into the child rows,
+    # so enforcement is paused for the scripts and proven intact by the check below.
+    # The pragma is a no-op inside a transaction, so it has to be set out here.
+    connection.execute("PRAGMA foreign_keys = OFF")
+    try:
+        for index, script in enumerate(MIGRATIONS[version:], start=version + 1):
+            connection.executescript(f"BEGIN;\n{script}\nPRAGMA user_version = {index};\nCOMMIT;")
+        violations = connection.execute("PRAGMA foreign_key_check").fetchall()
+        if violations:
+            raise RuntimeError(f"migration left {len(violations)} foreign key violations")
+    finally:
+        connection.execute("PRAGMA foreign_keys = ON")
 
 
 def connect(db_path: str) -> sqlite3.Connection:

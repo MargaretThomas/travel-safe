@@ -12,6 +12,7 @@ from deadman.db import connect
 from deadman.geocoding import NullGeocoder
 from deadman.notifications.dispatcher import Dispatcher
 from deadman.notifications.providers import SendResult
+from deadman.switch import DAY_MINUTES
 from deadman.timeutil import UTC
 from deadman.worker import run_once
 
@@ -130,10 +131,12 @@ class Account:
 
 @pytest.fixture
 def register(client):
-    def _register(name: str = "Thandi", interval: int = 1, timezone: str | None = "Africa/Johannesburg") -> Account:
+    def _register(
+        name: str = "Thandi", interval_minutes: int = DAY_MINUTES, timezone: str | None = "Africa/Johannesburg"
+    ) -> Account:
         response = client.post(
             "/api/v1/auth/register",
-            json={"name": name, "check_in_interval_days": interval, "timezone": timezone},
+            json={"name": name, "check_in_interval_minutes": interval_minutes, "timezone": timezone},
         )
         assert response.status_code == 201, response.text
         body = response.json()

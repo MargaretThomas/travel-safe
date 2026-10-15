@@ -1,10 +1,11 @@
 from datetime import timedelta
 
+from deadman.switch import DAY_MINUTES, HOUR_MINUTES
 from deadman.timeutil import to_db
 
 
 def test_first_check_in_arms_the_switch(client, register, check_in, clock):
-    account = register(interval=7)
+    account = register(interval_minutes=7 * DAY_MINUTES)
     status = client.get("/api/v1/switch/status", headers=account.headers).json()
     assert status["state"] == "inactive"
     assert status["next_deadline_at"] is None
@@ -12,7 +13,19 @@ def test_first_check_in_arms_the_switch(client, register, check_in, clock):
     body = check_in(account)
     assert body["created"] is True
     assert body["status"]["state"] == "armed"
+    assert body["status"]["check_in_interval_minutes"] == 7 * DAY_MINUTES
     assert body["status"]["next_deadline_at"] == to_db(clock() + timedelta(days=7))
+
+
+def test_hourly_interval_expires_an_hour_after_the_check_in(client, register, check_in, clock, run_worker):
+    account = register(interval_minutes=HOUR_MINUTES)
+    body = check_in(account)
+    assert body["status"]["next_deadline_at"] == to_db(clock() + timedelta(hours=1))
+
+    clock.advance(minutes=59, seconds=59)
+    assert run_worker().triggered_events == []
+    clock.advance(seconds=2)
+    assert len(run_worker().triggered_events) == 1
 
 
 def test_check_in_is_idempotent_by_client_id(client, register, clock):
@@ -28,7 +41,7 @@ def test_check_in_is_idempotent_by_client_id(client, register, clock):
 
 
 def test_deadline_uses_server_time_not_device_clock(client, register, clock):
-    account = register(interval=1)
+    account = register()
     future_device_time = (clock() + timedelta(days=30)).isoformat()
     body = client.post(
         "/api/v1/check-ins",
@@ -40,7 +53,7 @@ def test_deadline_uses_server_time_not_device_clock(client, register, clock):
 
 
 def test_check_in_before_deadline_extends_it(client, register, check_in, clock, run_worker):
-    account = register(interval=1)
+    account = register()
     check_in(account)
     clock.advance(hours=23)
     body = check_in(account)
@@ -50,7 +63,7 @@ def test_check_in_before_deadline_extends_it(client, register, check_in, clock, 
 
 
 def test_check_in_exactly_at_deadline_is_on_time(client, register, check_in, clock, run_worker):
-    account = register(interval=1)
+    account = register()
     check_in(account)
     clock.advance(days=1)
     assert run_worker().triggered_events == []
@@ -60,7 +73,7 @@ def test_check_in_exactly_at_deadline_is_on_time(client, register, check_in, clo
 
 
 def test_check_in_after_trigger_resolves_event(client, register, check_in, clock, run_worker):
-    account = register(interval=1)
+    account = register()
     check_in(account)
     clock.advance(days=1, seconds=1)
     [event_id] = run_worker().triggered_events
@@ -93,31 +106,68 @@ def test_latest_check_in_endpoint(client, register, check_in):
 
 
 def test_user_changes_interval_recomputes_deadline(client, register, check_in, clock):
-    account = register(interval=1)
+    account = register()
     check_in(account)
     last = clock()
     clock.advance(hours=6)
-    response = client.patch("/api/v1/me", json={"check_in_interval_days": 30}, headers=account.headers)
+    response = client.patch("/api/v1/me", json={"check_in_interval_minutes": 30 * DAY_MINUTES}, headers=account.headers)
     assert response.status_code == 200
+    assert response.json()["check_in_interval_minutes"] == 30 * DAY_MINUTES
     status = client.get("/api/v1/switch/deadline", headers=account.headers).json()
     assert status["next_deadline_at"] == to_db(last + timedelta(days=30))
 
 
+def test_shortening_to_an_hour_recomputes_an_hourly_deadline(client, register, check_in, clock):
+    account = register(interval_minutes=7 * DAY_MINUTES)
+    check_in(account)
+    last = clock()
+    response = client.patch("/api/v1/me", json={"check_in_interval_minutes": HOUR_MINUTES}, headers=account.headers)
+    assert response.status_code == 200
+    assert client.get("/api/v1/switch/deadline", headers=account.headers).json()["next_deadline_at"] == to_db(
+        last + timedelta(hours=1)
+    )
+
+
 def test_shortening_interval_into_the_past_is_rejected(client, register, check_in, clock):
-    account = register(interval=30)
+    account = register(interval_minutes=30 * DAY_MINUTES)
     check_in(account)
     clock.advance(days=5)
-    response = client.patch("/api/v1/me", json={"check_in_interval_days": 3}, headers=account.headers)
+    response = client.patch("/api/v1/me", json={"check_in_interval_minutes": 3 * DAY_MINUTES}, headers=account.headers)
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "interval_would_expire"
 
 
+def test_days_spelling_is_still_accepted_and_reported_as_minutes(client, register, check_in, clock):
+    response = client.post(
+        "/api/v1/auth/register", json={"name": "A", "check_in_interval_days": 2, "timezone": None}
+    )
+    assert response.status_code == 201
+    body = client.get("/api/v1/switch/status", headers={"Authorization": "Bearer " + response.json()["tokens"]["access_token"]}).json()
+    assert body["check_in_interval_minutes"] == 2 * DAY_MINUTES
+
+    account = register()
+    patched = client.patch("/api/v1/me", json={"check_in_interval_days": 3}, headers=account.headers)
+    assert patched.json()["check_in_interval_minutes"] == 3 * DAY_MINUTES
+
+
 def test_out_of_range_interval_is_rejected(client, register):
     assert client.post(
-        "/api/v1/auth/register", json={"name": "A", "check_in_interval_days": 400}
+        "/api/v1/auth/register", json={"name": "A", "check_in_interval_minutes": 525_601}
     ).status_code == 422
     account = register()
-    assert client.patch("/api/v1/me", json={"check_in_interval_days": 0}, headers=account.headers).status_code == 422
+    assert client.patch("/api/v1/me", json={"check_in_interval_minutes": 59}, headers=account.headers).status_code == 422
+
+
+def test_ambiguous_interval_is_rejected(client):
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"name": "A", "check_in_interval_days": 2, "check_in_interval_minutes": 120},
+    )
+    assert response.status_code == 422
+
+
+def test_registration_without_an_interval_is_rejected(client):
+    assert client.post("/api/v1/auth/register", json={"name": "A"}).status_code == 422
 
 
 def test_naive_timestamps_are_rejected(client, register):

@@ -21,7 +21,7 @@ type TokenResponse = {
 
 type RegisterResponse = { user_id: string; account_key: string; tokens: TokenResponse };
 
-export type RegisterInput = { name: string; intervalDays: number; timezone?: string };
+export type RegisterInput = { name: string; intervalMinutes: number; timezone?: string };
 
 export class AuthFailedError extends ApiError {
   constructor() {
@@ -80,7 +80,11 @@ export class AuthSession {
   async register(input: RegisterInput): Promise<Credentials> {
     const response = await this.request<RegisterResponse>('/api/v1/auth/register', {
       method: 'POST',
-      body: { name: input.name, check_in_interval_days: input.intervalDays, timezone: input.timezone ?? null },
+      body: {
+        name: input.name,
+        check_in_interval_minutes: input.intervalMinutes,
+        timezone: input.timezone ?? null,
+      },
     });
     return this.save(
       this.apply(
