@@ -29,20 +29,33 @@ export const strings = {
     lessThanMinute: 'less than a minute',
     joiner: '{a} {b}',
   },
+  welcome: {
+    wordmark: 'Travel Safe',
+    eyebrow: 'Safety check-ins for people who travel alone',
+    headline: {
+      lead: 'A safety net',
+      tail: 'that checks on you',
+    },
+    features: {
+      problem: {
+        title: 'The problem',
+        body: 'When you travel, run alone, or live on your own, nobody may notice for days if something goes wrong.',
+      },
+      solution: {
+        title: 'How Travel Safe helps',
+        body:
+          'You check in with one tap on a schedule you choose. If you miss a check-in, the people you pick are told, with your last known location.',
+      },
+      control: {
+        title: 'You decide who is told',
+        body: 'You choose who is contacted and what is shared. Our server keeps your deadline, so a missed check-in still goes out even if your phone is off.',
+      },
+    },
+    cta: 'Get started',
+    legal: 'You choose who is contacted and what is shared. Your location history is deleted after 24 hours.',
+  },
   onboarding: {
     progress: 'Step {step} of {total}',
-    intro: {
-      title: 'A safety net that checks on you',
-      problemTitle: 'The problem',
-      problemBody:
-        'When you travel, run alone, or live on your own, nobody may notice for days if something goes wrong.',
-      solutionTitle: 'How Travel Safe helps',
-      solutionBody:
-        'You check in with one tap on a schedule you choose. If you miss a check-in, the people you pick are told, with your last known location.',
-      trustBody:
-        'You decide who is contacted and what is shared. Our server keeps track of your deadline, so it still works if your phone is off or out of battery.',
-      start: 'Get started',
-    },
     name: {
       title: 'What should we call you?',
       body: 'Your emergency contacts will see this name if you miss a check-in, so use the name they know you by.',
