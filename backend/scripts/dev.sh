@@ -411,7 +411,7 @@ cmd_run() {
   fi
 
   log "api      -> http://$API_HOST:$API_PORT (logs: $LOGS/api.log)"
-  (cd "$CODE" && exec "$VENV/bin/uvicorn" app:app --reload --host "$API_HOST" --port "$API_PORT") \
+  (cd "$CODE" && exec "$VENV/bin/uvicorn" api.api.app:app --reload --host "$API_HOST" --port "$API_PORT") \
     > "$LOGS/api.log" 2>&1 &
   pids+=($!); names+=(api)
 
