@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Response
 
-from deadman import accounts, checkins, contacts, engine, locations, profiles
-from deadman.api.deps import AppSettings, Db, Messaging, Now, Token, UserId
-from deadman.api.schemas import (
+from api import accounts, checkins, contacts, engine, locations, profiles
+from api.api.deps import AppSettings, Db, Messaging, Now, Token, UserId
+from api.api.schemas import (
     CheckInRequest,
     ContactPayload,
     LocationBatch,
@@ -15,11 +15,11 @@ from deadman.api.schemas import (
     RegisterResponse,
     TokenResponse,
 )
-from deadman.checkins import DeviceState
-from deadman.db import transaction
-from deadman.errors import ServiceUnavailableError, ValidationFailed
-from deadman.notifications.messages import alert_test_text
-from deadman.profiles import validate_name
+from api.checkins import DeviceState
+from api.db import transaction
+from api.errors import ServiceUnavailableError, ValidationFailed
+from api.notifications.messages import alert_test_text
+from api.profiles import validate_name
 
 router = APIRouter(prefix="/api/v1")
 

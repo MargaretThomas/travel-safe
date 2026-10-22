@@ -1,7 +1,7 @@
 from datetime import timedelta
 
-from deadman.switch import DAY_MINUTES, HOUR_MINUTES
-from deadman.timeutil import to_db
+from api.switch import DAY_MINUTES, HOUR_MINUTES
+from api.timeutil import to_db
 
 
 def test_first_check_in_arms_the_switch(client, register, check_in, clock):

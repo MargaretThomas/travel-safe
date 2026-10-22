@@ -1,5 +1,5 @@
-from deadman.engine import channels_for_contact, find_expired_users, trigger_user
-from deadman.switch import DAY_MINUTES
+from api.engine import channels_for_contact, find_expired_users, trigger_user
+from api.switch import DAY_MINUTES
 from tests.conftest import FixedGeocoder
 
 
@@ -42,7 +42,7 @@ def test_switch_cannot_trigger_twice(db, settings, register, check_in, clock):
     second = trigger_user(db, account.user_id, clock(), settings)
     assert first is not None
     assert second is None
-    assert db.execute("SELECT COUNT(*) FROM deadman_events").fetchone()[0] == 1
+    assert db.execute("SELECT COUNT(*) FROM api_events").fetchone()[0] == 1
     assert find_expired_users(db, clock()) == []
 
 
@@ -54,7 +54,7 @@ def test_worker_runs_repeatedly_without_duplicates(db, register, check_in, add_c
     for _ in range(5):
         run_worker()
         clock.advance(minutes=1)
-    assert db.execute("SELECT COUNT(*) FROM deadman_events").fetchone()[0] == 1
+    assert db.execute("SELECT COUNT(*) FROM api_events").fetchone()[0] == 1
     assert db.execute("SELECT COUNT(*) FROM notification_events").fetchone()[0] == 1
     assert len(email.sent) == 1
 
@@ -92,7 +92,7 @@ def test_trigger_snapshots_location_and_address(db, register, check_in, clock, r
     clock.advance(days=1, seconds=1)
     geocoder = FixedGeocoder()
     [event_id] = run_worker(geocoder).triggered_events
-    event = db.execute("SELECT * FROM deadman_events WHERE id = ?", (event_id,)).fetchone()
+    event = db.execute("SELECT * FROM api_events WHERE id = ?", (event_id,)).fetchone()
     assert (event["latitude"], event["longitude"]) == (-33.92, 18.42)
     assert event["address"] == "12 Long Street, Cape Town"
     assert event["battery_level"] == 0.15
@@ -114,7 +114,7 @@ def test_trigger_tags_recent_journey_points(db, client, register, check_in, cloc
     )
     clock.advance(hours=4, seconds=1)
     [event_id] = run_worker().triggered_events
-    tagged = db.execute("SELECT COUNT(*) FROM locations WHERE deadman_event_id = ?", (event_id,)).fetchone()[0]
+    tagged = db.execute("SELECT COUNT(*) FROM locations WHERE api_event_id = ?", (event_id,)).fetchone()[0]
     assert tagged == 1
 
 

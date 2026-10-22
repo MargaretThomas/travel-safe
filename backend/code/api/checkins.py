@@ -4,13 +4,13 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.errors import NotFoundError
-from deadman.locations import LocationPoint, save_points
-from deadman.security import new_id
-from deadman.switch import compute_deadline
-from deadman.timeutil import to_db
+from api.config import Settings
+from api.db import transaction
+from api.errors import NotFoundError
+from api.locations import LocationPoint, save_points
+from api.security import new_id
+from api.switch import compute_deadline
+from api.timeutil import to_db
 
 
 @dataclass(frozen=True)
@@ -108,12 +108,12 @@ def record_check_in(
             resolved = [
                 row["id"]
                 for row in connection.execute(
-                    "SELECT id FROM deadman_events WHERE user_id = ? AND status = 'triggered'", (user_id,)
+                    "SELECT id FROM api_events WHERE user_id = ? AND status = 'triggered'", (user_id,)
                 ).fetchall()
             ]
             connection.execute(
                 """
-                UPDATE deadman_events SET status = 'resolved', resolved_at = ?
+                UPDATE api_events SET status = 'resolved', resolved_at = ?
                 WHERE user_id = ? AND status = 'triggered'
                 """,
                 (to_db(now), user_id),
@@ -122,7 +122,7 @@ def record_check_in(
             connection.execute(
                 f"""
                 UPDATE notification_events SET status = 'cancelled', updated_at = ?
-                WHERE status = 'pending' AND deadman_event_id IN ({",".join("?" * len(resolved))})
+                WHERE status = 'pending' AND api_event_id IN ({",".join("?" * len(resolved))})
                 """,
                 (to_db(now), *resolved),
             )

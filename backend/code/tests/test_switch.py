@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import pytest
 
-from deadman.switch import (
+from api.switch import (
     DAY_MINUTES,
     HOUR_MINUTES,
     MAX_INTERVAL_MINUTES,

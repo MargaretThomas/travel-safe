@@ -4,7 +4,7 @@ import json
 import sqlite3
 from html import escape
 
-from deadman.timeutil import format_human, from_db
+from api.timeutil import format_human, from_db
 
 MAX_JOURNEY_POINTS = 500
 
@@ -14,7 +14,7 @@ def build_view(connection: sqlite3.Connection, event_id: str, link_expires_at: s
     event = connection.execute(
         """
         SELECT e.*, u.name AS user_name, u.timezone
-        FROM deadman_events e JOIN users u ON u.id = e.user_id
+        FROM api_events e JOIN users u ON u.id = e.user_id
         WHERE e.id = ?
         """,
         (event_id,),
@@ -22,7 +22,7 @@ def build_view(connection: sqlite3.Connection, event_id: str, link_expires_at: s
     journey_rows = connection.execute(
         """
         SELECT latitude, longitude, recorded_at FROM locations
-        WHERE deadman_event_id = ? ORDER BY recorded_at LIMIT ?
+        WHERE api_event_id = ? ORDER BY recorded_at LIMIT ?
         """,
         (event_id, MAX_JOURNEY_POINTS),
     ).fetchall()

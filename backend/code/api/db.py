@@ -77,7 +77,7 @@ MIGRATIONS: tuple[str, ...] = (
         received_at TEXT NOT NULL
     );
 
-    CREATE TABLE deadman_events (
+    CREATE TABLE api_events (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
         deadline_at TEXT NOT NULL,
@@ -95,8 +95,8 @@ MIGRATIONS: tuple[str, ...] = (
         location_scrubbed_at TEXT,
         UNIQUE (user_id, deadline_at)
     );
-    CREATE INDEX idx_events_user ON deadman_events (user_id, triggered_at);
-    CREATE INDEX idx_events_purge ON deadman_events (location_purge_after);
+    CREATE INDEX idx_events_user ON api_events (user_id, triggered_at);
+    CREATE INDEX idx_events_purge ON api_events (location_purge_after);
 
     CREATE TABLE locations (
         id TEXT PRIMARY KEY,
@@ -107,15 +107,15 @@ MIGRATIONS: tuple[str, ...] = (
         recorded_at TEXT NOT NULL,
         received_at TEXT NOT NULL,
         source TEXT NOT NULL CHECK (source IN ('check_in', 'foreground', 'background')),
-        deadman_event_id TEXT REFERENCES deadman_events (id) ON DELETE SET NULL
+        api_event_id TEXT REFERENCES api_events (id) ON DELETE SET NULL
     );
     CREATE INDEX idx_locations_user_recorded ON locations (user_id, recorded_at);
     CREATE INDEX idx_locations_recorded ON locations (recorded_at);
-    CREATE INDEX idx_locations_event ON locations (deadman_event_id);
+    CREATE INDEX idx_locations_event ON locations (api_event_id);
 
     CREATE TABLE notification_events (
         id TEXT PRIMARY KEY,
-        deadman_event_id TEXT NOT NULL REFERENCES deadman_events (id) ON DELETE CASCADE,
+        api_event_id TEXT NOT NULL REFERENCES api_events (id) ON DELETE CASCADE,
         contact_id TEXT REFERENCES emergency_contacts (id) ON DELETE SET NULL,
         notification_type TEXT NOT NULL DEFAULT 'emergency_alert',
         channel TEXT NOT NULL CHECK (channel IN ('email', 'whatsapp', 'sms')),
@@ -130,14 +130,14 @@ MIGRATIONS: tuple[str, ...] = (
         created_at TEXT NOT NULL,
         sent_at TEXT,
         updated_at TEXT NOT NULL,
-        UNIQUE (deadman_event_id, contact_id, channel)
+        UNIQUE (api_event_id, contact_id, channel)
     );
     CREATE INDEX idx_notifications_status ON notification_events (status);
     CREATE INDEX idx_notifications_provider ON notification_events (provider_message_id);
 
     CREATE TABLE emergency_links (
         id TEXT PRIMARY KEY,
-        deadman_event_id TEXT NOT NULL REFERENCES deadman_events (id) ON DELETE CASCADE,
+        api_event_id TEXT NOT NULL REFERENCES api_events (id) ON DELETE CASCADE,
         notification_event_id TEXT REFERENCES notification_events (id) ON DELETE SET NULL,
         token_hash TEXT NOT NULL UNIQUE,
         created_at TEXT NOT NULL,
@@ -146,7 +146,7 @@ MIGRATIONS: tuple[str, ...] = (
         last_accessed_at TEXT
     );
     CREATE INDEX idx_links_expiry ON emergency_links (expires_at);
-    CREATE INDEX idx_links_event ON emergency_links (deadman_event_id);
+    CREATE INDEX idx_links_event ON emergency_links (api_event_id);
 
     CREATE TABLE archived_profiles (
         user_id TEXT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
@@ -165,7 +165,7 @@ MIGRATIONS: tuple[str, ...] = (
 
     CREATE TABLE notification_events_new (
         id TEXT PRIMARY KEY,
-        deadman_event_id TEXT NOT NULL REFERENCES deadman_events (id) ON DELETE CASCADE,
+        api_event_id TEXT NOT NULL REFERENCES api_events (id) ON DELETE CASCADE,
         contact_id TEXT REFERENCES emergency_contacts (id) ON DELETE SET NULL,
         notification_type TEXT NOT NULL DEFAULT 'emergency_alert',
         channel TEXT NOT NULL CHECK (channel IN ('email', 'whatsapp')),
@@ -180,14 +180,14 @@ MIGRATIONS: tuple[str, ...] = (
         created_at TEXT NOT NULL,
         sent_at TEXT,
         updated_at TEXT NOT NULL,
-        UNIQUE (deadman_event_id, contact_id, channel)
+        UNIQUE (api_event_id, contact_id, channel)
     );
     INSERT INTO notification_events_new (
-        id, deadman_event_id, contact_id, notification_type, channel, recipient,
+        id, api_event_id, contact_id, notification_type, channel, recipient,
         recipient_name, status, retryable, attempts, provider_message_id,
         failure_reason, created_at, sent_at, updated_at
     )
-    SELECT id, deadman_event_id, contact_id, notification_type, channel, recipient,
+    SELECT id, api_event_id, contact_id, notification_type, channel, recipient,
            recipient_name, status, retryable, attempts, provider_message_id,
            failure_reason, created_at, sent_at, updated_at
     FROM notification_events WHERE channel != 'sms';

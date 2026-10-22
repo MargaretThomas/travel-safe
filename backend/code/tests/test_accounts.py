@@ -2,10 +2,10 @@ from datetime import timedelta
 
 import pytest
 
-from deadman import accounts
-from deadman.errors import AuthError
-from deadman.security import hash_secret
-from deadman.switch import DAY_MINUTES
+from api import accounts
+from api.errors import AuthError
+from api.security import hash_secret
+from api.switch import DAY_MINUTES
 from tests.conftest import START
 
 

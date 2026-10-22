@@ -1,4 +1,4 @@
-from deadman.db import MIGRATIONS, migrate, open_connection
+from api.db import MIGRATIONS, migrate, open_connection
 
 NOW = "2026-01-10T09:00:00+00:00"
 
@@ -19,7 +19,7 @@ def _old_schema_db(tmp_path):
     )
     connection.execute(
         """
-        INSERT INTO deadman_events (id, user_id, deadline_at, triggered_at, status, location_purge_after)
+        INSERT INTO api_events (id, user_id, deadline_at, triggered_at, status, location_purge_after)
         VALUES ('e1', 'u1', ?, ?, 'triggered', ?)
         """,
         (NOW, NOW, "2026-02-10T09:00:00+00:00"),
@@ -36,7 +36,7 @@ def _old_schema_db(tmp_path):
     def _notification(notification_id: str, contact_id: str, channel: str, recipient: str) -> None:
         connection.execute(
             """
-            INSERT INTO notification_events (id, deadman_event_id, contact_id, notification_type, channel,
+            INSERT INTO notification_events (id, api_event_id, contact_id, notification_type, channel,
                                              recipient, recipient_name, status, retryable, attempts,
                                              created_at, updated_at)
             VALUES (?, 'e1', ?, 'emergency_alert', ?, ?, ?, 'sent', 1, 1, ?, ?)
@@ -49,7 +49,7 @@ def _old_schema_db(tmp_path):
 
     connection.execute(
         """
-        INSERT INTO emergency_links (id, deadman_event_id, notification_event_id, token_hash, created_at, expires_at)
+        INSERT INTO emergency_links (id, api_event_id, notification_event_id, token_hash, created_at, expires_at)
         VALUES ('l1', 'e1', 'n1', 'tok-email', ?, ?), ('l2', 'e1', 'n2', 'tok-sms', ?, ?)
         """,
         (NOW, NOW, NOW, NOW),
@@ -85,7 +85,7 @@ def test_sms_is_rejected_after_migration(tmp_path):
         try:
             connection.execute(
                 """
-                INSERT INTO notification_events (id, deadman_event_id, contact_id, notification_type, channel,
+                INSERT INTO notification_events (id, api_event_id, contact_id, notification_type, channel,
                                                  recipient, recipient_name, status, retryable, attempts,
                                                  created_at, updated_at)
                 VALUES ('n3', 'e1', 'c2', 'emergency_alert', 'sms', '+27821234567', 'Nomsa',
@@ -107,7 +107,7 @@ CHILD_TABLES = [
     "emergency_contacts",
     "check_ins",
     "last_known_locations",
-    "deadman_events",
+    "api_events",
     "locations",
     "notification_events",
     "emergency_links",
@@ -160,21 +160,21 @@ def _version_2_db(tmp_path, interval_days: int = 7):
     )
     connection.execute(
         """
-        INSERT INTO deadman_events (id, user_id, deadline_at, triggered_at, status, location_purge_after)
+        INSERT INTO api_events (id, user_id, deadline_at, triggered_at, status, location_purge_after)
         VALUES ('e1', 'u1', ?, ?, 'triggered', ?)
         """,
         (NOW, NOW, NOW),
     )
     connection.execute(
         """
-        INSERT INTO locations (id, user_id, latitude, longitude, recorded_at, received_at, source, deadman_event_id)
+        INSERT INTO locations (id, user_id, latitude, longitude, recorded_at, received_at, source, api_event_id)
         VALUES ('loc1', 'u1', -33.9, 18.4, ?, ?, 'check_in', 'e1')
         """,
         (NOW, NOW),
     )
     connection.execute(
         """
-        INSERT INTO notification_events (id, deadman_event_id, contact_id, channel, recipient, recipient_name,
+        INSERT INTO notification_events (id, api_event_id, contact_id, channel, recipient, recipient_name,
                                          status, created_at, updated_at)
         VALUES ('n1', 'e1', 'c1', 'email', 'sipho@example.com', 'Sipho', 'sent', ?, ?)
         """,
@@ -182,7 +182,7 @@ def _version_2_db(tmp_path, interval_days: int = 7):
     )
     connection.execute(
         """
-        INSERT INTO emergency_links (id, deadman_event_id, notification_event_id, token_hash, created_at, expires_at)
+        INSERT INTO emergency_links (id, api_event_id, notification_event_id, token_hash, created_at, expires_at)
         VALUES ('l1', 'e1', 'n1', 'tok', ?, ?)
         """,
         (NOW, NOW),

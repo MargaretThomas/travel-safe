@@ -3,15 +3,15 @@ import json
 import httpx
 import pytest
 
-from deadman.config import Settings
-from deadman.geocoding import MapboxGeocoder
-from deadman.notifications.providers import (
+from api.config import Settings
+from api.geocoding import MapboxGeocoder
+from api.notifications.providers import (
     ResendEmailProvider,
     UnconfiguredEmailProvider,
     UnconfiguredMessagingProvider,
     WhatsAppBotMessagingProvider,
 )
-from deadman.services import build_email_provider, build_geocoder, build_messaging_provider
+from api.services import build_email_provider, build_geocoder, build_messaging_provider
 
 
 def _client(handler):

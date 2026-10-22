@@ -14,9 +14,9 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.timeutil import to_db
+from api.config import Settings
+from api.db import transaction
+from api.timeutil import to_db
 
 
 @dataclass(frozen=True)
@@ -35,8 +35,8 @@ def cleanup_locations(connection: sqlite3.Connection, now: datetime, settings: S
             DELETE FROM locations
             WHERE recorded_at < ?
               AND (
-                deadman_event_id IS NULL
-                OR deadman_event_id IN (SELECT id FROM deadman_events WHERE location_purge_after <= ?)
+                api_event_id IS NULL
+                OR api_event_id IN (SELECT id FROM api_events WHERE location_purge_after <= ?)
               )
             """,
             (to_db(now - settings.location_retention), to_db(now)),
@@ -48,7 +48,7 @@ def scrub_event_locations(connection: sqlite3.Connection, now: datetime) -> int:
     with transaction(connection):
         cursor = connection.execute(
             """
-            UPDATE deadman_events
+            UPDATE api_events
             SET latitude = NULL, longitude = NULL, accuracy_m = NULL, address = NULL, location_scrubbed_at = ?
             WHERE location_purge_after <= ? AND location_scrubbed_at IS NULL
             """,

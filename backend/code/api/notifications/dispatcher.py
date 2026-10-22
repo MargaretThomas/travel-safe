@@ -13,18 +13,18 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.links import mint_link
-from deadman.notifications.messages import (
+from api.config import Settings
+from api.db import transaction
+from api.links import mint_link
+from api.notifications.messages import (
     EmergencyMessage,
     email_html,
     email_subject,
     email_text,
     short_text,
 )
-from deadman.notifications.providers import EmailProvider, MessagingProvider, SendResult
-from deadman.timeutil import from_db, to_db
+from api.notifications.providers import EmailProvider, MessagingProvider, SendResult
+from api.timeutil import from_db, to_db
 
 logger = logging.getLogger(__name__)
 
@@ -77,12 +77,12 @@ class Dispatcher:
                 return None
             row = connection.execute(
                 """
-                SELECT n.id, n.channel, n.recipient, n.recipient_name, n.attempts, n.deadman_event_id,
+                SELECT n.id, n.channel, n.recipient, n.recipient_name, n.attempts, n.api_event_id,
                        e.status AS event_status, e.deadline_at, e.triggered_at, e.last_check_in_at,
                        e.latitude, e.longitude, e.location_recorded_at, e.address,
                        u.name AS user_name, u.timezone, u.archived_at
                 FROM notification_events n
-                JOIN deadman_events e ON e.id = n.deadman_event_id
+                JOIN api_events e ON e.id = n.api_event_id
                 JOIN users u ON u.id = e.user_id
                 WHERE n.id = ?
                 """,
@@ -99,7 +99,7 @@ class Dispatcher:
             expires_at = triggered_at + self._settings.emergency_link_ttl
             token = mint_link(
                 connection,
-                event_id=row["deadman_event_id"],
+                event_id=row["api_event_id"],
                 notification_id=notification_id,
                 expires_at=expires_at,
                 now=now,

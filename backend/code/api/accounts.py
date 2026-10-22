@@ -11,11 +11,11 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.errors import AuthError
-from deadman.security import hash_secret, new_id, new_secret, secrets_match
-from deadman.timeutil import from_db, to_db
+from api.config import Settings
+from api.db import transaction
+from api.errors import AuthError
+from api.security import hash_secret, new_id, new_secret, secrets_match
+from api.timeutil import from_db, to_db
 
 
 @dataclass(frozen=True)

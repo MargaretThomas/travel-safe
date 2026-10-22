@@ -1,4 +1,4 @@
-"""Scheduled worker: `python -m deadman.worker` (loop) or `--once` (cron-friendly).
+"""Scheduled worker: `python -m api.worker` (loop) or `--once` (cron-friendly).
 
 Every step is idempotent, so running several workers, or re-running after a crash,
 cannot create duplicate events or notifications.
@@ -13,16 +13,16 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import connect
-from deadman.engine import process_expired
-from deadman.geocoding import ReverseGeocoder
-from deadman.notifications.dispatcher import Dispatcher, DispatchSummary
-from deadman.retention import CleanupSummary, run_cleanup
-from deadman.services import build_dispatcher, build_geocoder
-from deadman.timeutil import utc_now
+from api.config import Settings
+from api.db import connect
+from api.engine import process_expired
+from api.geocoding import ReverseGeocoder
+from api.notifications.dispatcher import Dispatcher, DispatchSummary
+from api.retention import CleanupSummary, run_cleanup
+from api.services import build_dispatcher, build_geocoder
+from api.timeutil import utc_now
 
-logger = logging.getLogger("deadman.worker")
+logger = logging.getLogger("api.worker")
 
 
 @dataclass(frozen=True)

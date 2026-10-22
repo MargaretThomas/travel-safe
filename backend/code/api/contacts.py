@@ -5,11 +5,11 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.errors import ConflictError, NotFoundError, ValidationFailed
-from deadman.security import new_id
-from deadman.timeutil import to_db
+from api.config import Settings
+from api.db import transaction
+from api.errors import ConflictError, NotFoundError, ValidationFailed
+from api.security import new_id
+from api.timeutil import to_db
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 E164_PATTERN = re.compile(r"^\+[1-9]\d{6,14}$")

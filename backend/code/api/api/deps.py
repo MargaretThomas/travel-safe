@@ -7,11 +7,11 @@ from typing import Annotated
 
 from fastapi import Depends, Header, Request
 
-from deadman.accounts import authenticate
-from deadman.config import Settings
-from deadman.db import open_connection
-from deadman.errors import AuthError
-from deadman.notifications.providers import MessagingProvider
+from api.accounts import authenticate
+from api.config import Settings
+from api.db import open_connection
+from api.errors import AuthError
+from api.notifications.providers import MessagingProvider
 
 
 def get_settings(request: Request) -> Settings:

@@ -3,8 +3,8 @@
 Idempotency is enforced at three levels so repeated or concurrent worker runs can
 never double-notify:
 1. the user row flips armed -> triggered with a conditional UPDATE (rowcount check);
-2. deadman_events has UNIQUE (user_id, deadline_at);
-3. notification_events has UNIQUE (deadman_event_id, contact_id, channel).
+2. api_events has UNIQUE (user_id, deadline_at);
+3. notification_events has UNIQUE (api_event_id, contact_id, channel).
 """
 
 from __future__ import annotations
@@ -13,11 +13,11 @@ import logging
 import sqlite3
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.geocoding import ReverseGeocoder
-from deadman.security import new_id
-from deadman.timeutil import to_db
+from api.config import Settings
+from api.db import transaction
+from api.geocoding import ReverseGeocoder
+from api.security import new_id
+from api.timeutil import to_db
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def trigger_user(
         event_id = new_id()
         cursor = connection.execute(
             """
-            INSERT OR IGNORE INTO deadman_events (
+            INSERT OR IGNORE INTO api_events (
                 id, user_id, deadline_at, triggered_at, status, last_check_in_at,
                 latitude, longitude, accuracy_m, location_recorded_at, battery_level, location_purge_after
             ) VALUES (?, ?, ?, ?, 'triggered', ?, ?, ?, ?, ?, ?, ?)
@@ -94,8 +94,8 @@ def trigger_user(
         # Keep the journey leading up to the event beyond the normal 24h retention.
         connection.execute(
             """
-            UPDATE locations SET deadman_event_id = ?
-            WHERE user_id = ? AND deadman_event_id IS NULL AND recorded_at >= ?
+            UPDATE locations SET api_event_id = ?
+            WHERE user_id = ? AND api_event_id IS NULL AND recorded_at >= ?
             """,
             (event_id, user_id, to_db(now - settings.location_retention)),
         )
@@ -108,7 +108,7 @@ def trigger_user(
                 connection.execute(
                     """
                     INSERT OR IGNORE INTO notification_events (
-                        id, deadman_event_id, contact_id, channel, recipient, recipient_name,
+                        id, api_event_id, contact_id, channel, recipient, recipient_name,
                         status, created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
                     """,
@@ -131,7 +131,7 @@ def attach_address(
     connection: sqlite3.Connection, event_id: str, geocoder: ReverseGeocoder
 ) -> str | None:
     event = connection.execute(
-        "SELECT latitude, longitude, address FROM deadman_events WHERE id = ?", (event_id,)
+        "SELECT latitude, longitude, address FROM api_events WHERE id = ?", (event_id,)
     ).fetchone()
     if event is None or event["latitude"] is None or event["address"] is not None:
         return None
@@ -139,7 +139,7 @@ def attach_address(
     if address:
         with transaction(connection):
             connection.execute(
-                "UPDATE deadman_events SET address = ? WHERE id = ? AND address IS NULL", (address, event_id)
+                "UPDATE api_events SET address = ? WHERE id = ? AND address IS NULL", (address, event_id)
             )
     return address
 
@@ -159,14 +159,14 @@ def process_expired(
 
 def latest_event_status(connection: sqlite3.Connection, user_id: str) -> dict | None:
     event = connection.execute(
-        "SELECT * FROM deadman_events WHERE user_id = ? ORDER BY triggered_at DESC LIMIT 1", (user_id,)
+        "SELECT * FROM api_events WHERE user_id = ? ORDER BY triggered_at DESC LIMIT 1", (user_id,)
     ).fetchone()
     if event is None:
         return None
     notifications = connection.execute(
         """
         SELECT id, channel, recipient_name, status, failure_reason, sent_at, attempts
-        FROM notification_events WHERE deadman_event_id = ? ORDER BY created_at, channel
+        FROM notification_events WHERE api_event_id = ? ORDER BY created_at, channel
         """,
         (event["id"],),
     ).fetchall()

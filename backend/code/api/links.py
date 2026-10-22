@@ -10,8 +10,8 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
-from deadman.security import hash_secret, new_id, new_link_token
-from deadman.timeutil import from_db, to_db
+from api.security import hash_secret, new_id, new_link_token
+from api.timeutil import from_db, to_db
 
 
 def mint_link(
@@ -26,7 +26,7 @@ def mint_link(
     token = new_link_token()
     connection.execute(
         """
-        INSERT INTO emergency_links (id, deadman_event_id, notification_event_id, token_hash, created_at, expires_at)
+        INSERT INTO emergency_links (id, api_event_id, notification_event_id, token_hash, created_at, expires_at)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (new_id(), event_id, notification_id, hash_secret(token), to_db(now), to_db(expires_at)),
@@ -40,9 +40,9 @@ def resolve_link(connection: sqlite3.Connection, token: str, now: datetime) -> s
         return None
     row = connection.execute(
         """
-        SELECT l.id AS link_id, l.expires_at, l.deadman_event_id
+        SELECT l.id AS link_id, l.expires_at, l.api_event_id
         FROM emergency_links l
-        JOIN deadman_events e ON e.id = l.deadman_event_id
+        JOIN api_events e ON e.id = l.api_event_id
         JOIN users u ON u.id = e.user_id
         WHERE l.token_hash = ? AND l.revoked_at IS NULL AND u.archived_at IS NULL
         """,

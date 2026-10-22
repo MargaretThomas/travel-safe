@@ -1,7 +1,7 @@
 import sqlite3
 
-from deadman import worker
-from deadman.db import MIGRATIONS
+from api import worker
+from api.db import MIGRATIONS
 
 
 def test_worker_once_runs_a_full_pass(tmp_path, monkeypatch):

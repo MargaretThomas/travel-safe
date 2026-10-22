@@ -3,11 +3,11 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.errors import ConflictError, NotFoundError, ValidationFailed
-from deadman.switch import compute_deadline, is_expired, seconds_remaining, validate_interval_minutes
-from deadman.timeutil import from_db, to_db
+from api.config import Settings
+from api.db import transaction
+from api.errors import ConflictError, NotFoundError, ValidationFailed
+from api.switch import compute_deadline, is_expired, seconds_remaining, validate_interval_minutes
+from api.timeutil import from_db, to_db
 
 MAX_NAME_LENGTH = 100
 
@@ -104,7 +104,7 @@ def archive_profile(
         connection.execute("DELETE FROM locations WHERE user_id = ?", (user_id,))
         connection.execute(
             """
-            UPDATE deadman_events SET latitude = NULL, longitude = NULL, accuracy_m = NULL, address = NULL,
+            UPDATE api_events SET latitude = NULL, longitude = NULL, accuracy_m = NULL, address = NULL,
                 location_scrubbed_at = ?
             WHERE user_id = ?
             """,
@@ -114,13 +114,13 @@ def archive_profile(
             """
             UPDATE notification_events SET status = 'cancelled', updated_at = ?
             WHERE status IN ('pending', 'failed')
-              AND deadman_event_id IN (SELECT id FROM deadman_events WHERE user_id = ?)
+              AND api_event_id IN (SELECT id FROM api_events WHERE user_id = ?)
             """,
             (to_db(now), user_id),
         )
         connection.execute(
-            "UPDATE emergency_links SET revoked_at = ? WHERE revoked_at IS NULL AND deadman_event_id IN "
-            "(SELECT id FROM deadman_events WHERE user_id = ?)",
+            "UPDATE emergency_links SET revoked_at = ? WHERE revoked_at IS NULL AND api_event_id IN "
+            "(SELECT id FROM api_events WHERE user_id = ?)",
             (to_db(now), user_id),
         )
         connection.execute(

@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import logging
 
-from deadman.config import Settings, env_file_path
-from deadman.geocoding import MapboxGeocoder, NullGeocoder, ReverseGeocoder
-from deadman.notifications.dispatcher import Dispatcher
-from deadman.notifications.providers import (
+from api.config import Settings, env_file_path
+from api.geocoding import MapboxGeocoder, NullGeocoder, ReverseGeocoder
+from api.notifications.dispatcher import Dispatcher
+from api.notifications.providers import (
     EmailProvider,
     MessagingProvider,
     ResendEmailProvider,

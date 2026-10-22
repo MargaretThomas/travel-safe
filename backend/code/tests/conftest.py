@@ -6,15 +6,15 @@ from datetime import datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from deadman.api.app import create_app
-from deadman.config import Settings
-from deadman.db import connect
-from deadman.geocoding import NullGeocoder
-from deadman.notifications.dispatcher import Dispatcher
-from deadman.notifications.providers import SendResult
-from deadman.switch import DAY_MINUTES
-from deadman.timeutil import UTC
-from deadman.worker import run_once
+from api.api.app import create_app
+from api.config import Settings
+from api.db import connect
+from api.geocoding import NullGeocoder
+from api.notifications.dispatcher import Dispatcher
+from api.notifications.providers import SendResult
+from api.switch import DAY_MINUTES
+from api.timeutil import UTC
+from api.worker import run_once
 
 START = datetime(2026, 1, 10, 9, 0, 0, tzinfo=UTC)
 
@@ -71,7 +71,7 @@ def clock() -> MutableClock:
 @pytest.fixture
 def settings(tmp_path) -> Settings:
     return Settings(
-        db_path=str(tmp_path / "deadman.db"),
+        db_path=str(tmp_path / "api.db"),
         public_base_url="https://safe.example",
         mapbox_public_token="pk.test",
         # Tests move the clock by days or months; token expiry has its own dedicated tests.

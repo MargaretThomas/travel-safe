@@ -8,13 +8,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from deadman.api import public, routes
-from deadman.config import Settings
-from deadman.db import connect
-from deadman.errors import DomainError
-from deadman.notifications.providers import MessagingProvider
-from deadman.services import build_messaging_provider
-from deadman.timeutil import Clock, utc_now
+from api.api import public, routes
+from api.config import Settings
+from api.db import connect
+from api.errors import DomainError
+from api.notifications.providers import MessagingProvider
+from api.services import build_messaging_provider
+from api.timeutil import Clock, utc_now
 
 logger = logging.getLogger(__name__)
 

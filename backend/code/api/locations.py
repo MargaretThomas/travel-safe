@@ -3,7 +3,7 @@
 Three kinds of location data are kept apart:
 - last known location: one overwritten row per active user, the core safety data;
 - journey points: short-lived history, deleted after the retention window (24h);
-- event locations: a snapshot on the deadman event plus journey points tagged with the
+- event locations: a snapshot on the api event plus journey points tagged with the
   event id, kept until the event's location_purge_after timestamp.
 """
 
@@ -13,10 +13,10 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from deadman.config import Settings
-from deadman.db import transaction
-from deadman.security import new_id
-from deadman.timeutil import to_db
+from api.config import Settings
+from api.db import transaction
+from api.security import new_id
+from api.timeutil import to_db
 
 MAX_CLOCK_SKEW = timedelta(minutes=5)
 LOCATION_SOURCES = ("check_in", "foreground", "background")

@@ -5,9 +5,9 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
-from deadman.accounts import TokenPair
-from deadman.locations import LocationPoint
-from deadman.switch import (
+from api.accounts import TokenPair
+from api.locations import LocationPoint
+from api.switch import (
     MAX_INTERVAL_DAYS,
     MAX_INTERVAL_MINUTES,
     MIN_INTERVAL_MINUTES,

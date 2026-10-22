@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html import escape
 
-from deadman.timeutil import format_human
+from api.timeutil import format_human
 
 
 @dataclass(frozen=True)

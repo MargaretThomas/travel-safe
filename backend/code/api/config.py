@@ -69,7 +69,7 @@ def _int(env: Mapping[str, str], key: str, default: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
-    db_path: str = "deadman.db"
+    db_path: str = "api.db"
     public_base_url: str = "http://127.0.0.1:8000"
     cors_origins: tuple[str, ...] = ()
 
@@ -109,7 +109,7 @@ class Settings:
             origin.strip() for origin in env.get("DEADMAN_CORS_ORIGINS", "").split(",") if origin.strip()
         )
         return cls(
-            db_path=env.get("DEADMAN_DB_PATH", "deadman.db"),
+            db_path=env.get("DEADMAN_DB_PATH", "api.db"),
             public_base_url=env.get("DEADMAN_PUBLIC_BASE_URL", "http://127.0.0.1:8000"),
             cors_origins=origins,
             location_retention=timedelta(hours=_int(env, "DEADMAN_LOCATION_RETENTION_HOURS", 24)),

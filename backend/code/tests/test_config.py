@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from deadman import config
-from deadman.config import Settings, env_file_path, load_env_file
+from api import config
+from api.config import Settings, env_file_path, load_env_file
 
 ENV_BODY = """
 # A comment, and a blank line above it.

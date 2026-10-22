@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from deadman.retention import cleanup_links, cleanup_locations, purge_archived_profiles, run_cleanup
+from api.retention import cleanup_links, cleanup_locations, purge_archived_profiles, run_cleanup
 
 
 def _upload(client, account, recorded_at, source="foreground"):
@@ -48,14 +48,14 @@ def test_emergency_location_retained_then_purged(db, client, register, check_in,
 
     clock.advance(days=2)
     run_cleanup(db, clock(), settings)
-    assert db.execute("SELECT COUNT(*) FROM locations WHERE deadman_event_id = ?", (event_id,)).fetchone()[0] == 1
-    assert db.execute("SELECT latitude FROM deadman_events WHERE id = ?", (event_id,)).fetchone()[0] is not None
+    assert db.execute("SELECT COUNT(*) FROM locations WHERE api_event_id = ?", (event_id,)).fetchone()[0] == 1
+    assert db.execute("SELECT latitude FROM api_events WHERE id = ?", (event_id,)).fetchone()[0] is not None
 
     clock.advance(days=settings.emergency_link_ttl.days)
     summary = run_cleanup(db, clock(), settings)
     assert summary.locations_deleted == 1
     assert summary.events_scrubbed == 1
-    event = db.execute("SELECT latitude, address, location_scrubbed_at FROM deadman_events WHERE id = ?", (event_id,)).fetchone()
+    event = db.execute("SELECT latitude, address, location_scrubbed_at FROM api_events WHERE id = ?", (event_id,)).fetchone()
     assert event["latitude"] is None and event["location_scrubbed_at"] is not None
 
 
