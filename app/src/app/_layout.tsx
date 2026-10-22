@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-
+import { Toaster } from '@/components/ui/molecules/Toast';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { useForegroundSync } from '@/hooks/use-foreground-sync';
 import { registerBackgroundSync } from '@/lib/background';
@@ -53,6 +53,11 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding" />
           </Stack.Protected>
         </Stack>
+        <Toaster
+          position={"top"}
+          offset={30}
+          theme="dark"
+        />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

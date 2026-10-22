@@ -1,4 +1,4 @@
-import { computeDeadline, DAY_MINUTES, DAY_MS, DEFAULT_INTERVAL_MINUTES, formatDuration, formatInterval, HOUR_MINUTES, HOUR_MS, INTERVAL_PRESETS, intervalPreset, isExpired, isValidInterval, MAX_INTERVAL_MINUTES, MIN_INTERVAL_MINUTES, MINUTE_MS, normalizeIntervalMinutes } from './intervals';
+import { computeDeadline, DAY_MINUTES, DAY_MS, DEFAULT_INTERVAL_MINUTES, formatDuration, formatInterval, HOUR_MINUTES, HOUR_MS, INTERVAL_PRESETS, INTERVAL_PRESET_MINUTES, intervalPreset, isExpired, isValidInterval, MAX_INTERVAL_MINUTES, MIN_INTERVAL_MINUTES, MINUTE_MS, nearestIntervalPreset, normalizeIntervalMinutes } from './intervals';
 
 const start = new Date('2026-01-10T09:00:00Z');
 
@@ -58,10 +58,43 @@ describe('intervals', () => {
     expect(intervalPreset(90)).toBeUndefined();
   });
 
+  it('lists the preset intervals in the order the ruler shows them', () => {
+    expect(INTERVAL_PRESET_MINUTES).toEqual([
+      HOUR_MINUTES,
+      DAY_MINUTES,
+      2 * DAY_MINUTES,
+      3 * DAY_MINUTES,
+      7 * DAY_MINUTES,
+      14 * DAY_MINUTES,
+      30 * DAY_MINUTES,
+      60 * DAY_MINUTES,
+      90 * DAY_MINUTES,
+      180 * DAY_MINUTES,
+      MAX_INTERVAL_MINUTES,
+    ]);
+  });
+
+  it('finds the preset nearest to an interval', () => {
+    expect(nearestIntervalPreset(HOUR_MINUTES).key).toBe('1h');
+    expect(nearestIntervalPreset(7 * DAY_MINUTES).key).toBe('1w');
+    expect(nearestIntervalPreset(MAX_INTERVAL_MINUTES).key).toBe('1y');
+  });
+
+  it('snaps an interval that is not a preset to the nearest preset', () => {
+    expect(nearestIntervalPreset(90).key).toBe('1h');
+    expect(nearestIntervalPreset(5 * DAY_MINUTES).key).toBe('3d');
+    expect(nearestIntervalPreset(21 * DAY_MINUTES).key).toBe('2w');
+    expect(nearestIntervalPreset(100 * DAY_MINUTES).key).toBe('90d');
+  });
+
   it('formats intervals with friendly labels', () => {
     expect(formatInterval(HOUR_MINUTES)).toBe('1 hour');
     expect(formatInterval(DAY_MINUTES)).toBe('1 day');
     expect(formatInterval(7 * DAY_MINUTES)).toBe('1 week');
+    expect(formatInterval(14 * DAY_MINUTES)).toBe('2 weeks');
+    expect(formatInterval(30 * DAY_MINUTES)).toBe('30 days');
+    expect(formatInterval(60 * DAY_MINUTES)).toBe('2 months');
+    expect(formatInterval(90 * DAY_MINUTES)).toBe('3 months');
     expect(formatInterval(180 * DAY_MINUTES)).toBe('6 months');
     expect(formatInterval(MAX_INTERVAL_MINUTES)).toBe('1 year');
   });
