@@ -42,14 +42,29 @@ appId: makers.travel.safe
 - tapOn:
     id: "onboarding-contacts-continue"
 
-# Interval presets with the required warning. The first preset is hourly.
+# The ruler picks the interval, and the presets below it do the same. The first
+# preset is hourly.
 - assertVisible:
     id: "interval-warning"
 - assertVisible: "If you don’t check in before this period expires, your Travel Safe will be triggered."
 - assertVisible:
+    id: "interval-ruler"
+- assertVisible:
+    id: "interval-selected-label"
+- assertVisible:
     id: "interval-1h"
+
+# Swiping the ruler only ever lands on an interval, never between two.
+- swipe:
+    direction: LEFT
+    duration: 400
+    id: "interval-ruler"
+- assertVisible:
+    id: "interval-selected-label"
+
 - tapOn:
     id: "interval-3d"
+- assertVisible: "3 days"
 - tapOn:
     id: "onboarding-interval-continue"
 
