@@ -2,7 +2,8 @@
 
 # dependencies
 node_modules/
-
+*.json
+*.plist
 # Expo
 .expo/
 dist/

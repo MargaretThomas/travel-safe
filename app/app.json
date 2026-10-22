@@ -8,7 +8,9 @@
     "scheme": "travelsafe",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "googleServicesFile": "./GoogleService-Info.plist",
       "icon": "./assets/travel.icon",
+      "supportsTablet": false,
       "bundleIdentifier": "makers.travel.safe",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -68,6 +70,32 @@
         {
           "configureAndroidBackup": true,
           "faceIDPermission": "Allow Travel Safe to access your Face ID biometric data."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          },
+          "ios": {
+            "useFrameworks": "dynamic",
+            "withoutAdIdSupport": true,
+            "forceStaticLinking": [
+              "RNFBAnalytics",
+              "RNFBApp",
+              "RNFBAppCheck",
+              "RNFBAuth",
+              "RNFBDatabase",
+              "RNFBCrashlytics",
+              "RNFBFirestore",
+              "RNFBFunctions",
+              "RNFBMessaging",
+              "RNFBRemoteConfig",
+              "RNFBStorage"
+            ]
+          }
         }
       ]
     ],
