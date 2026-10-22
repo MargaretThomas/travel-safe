@@ -155,7 +155,6 @@ const WelcomeScreenV4: React.FC<IWelcomeScreenV4> = ({
 
       <View style={[styles.content, { paddingBottom: insets.bottom + 20 }]}>
         <Headline tokens={headline} />
-
         <View
           style={[
             styles.actions,
