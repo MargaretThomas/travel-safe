@@ -1,8 +1,8 @@
 import pytest
 
-from deadman.contacts import normalize_phone, validate_contact
-from deadman.errors import ValidationFailed
-from deadman.notifications.providers import SendResult
+from api.contacts import normalize_phone, validate_contact
+from api.errors import ValidationFailed
+from api.notifications.providers import SendResult
 
 
 def test_contact_with_email_only_is_valid():
@@ -185,7 +185,7 @@ def test_test_alert_requires_a_phone(client, register, messaging, whatsapp, code
     assert messaging.whatsapp == []
 
 
-def test_test_alert_does_not_create_a_deadman_event(client, register, check_in, messaging):
+def test_test_alert_does_not_create_a_api_event(client, register, check_in, messaging):
     """A rehearsal is a send, not a trigger: it must not look like a real alarm later."""
     account = register("Thandi")
     check_in(account)

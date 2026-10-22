@@ -1,4 +1,4 @@
-from deadman.notifications.providers import NOT_CONFIGURED, SendResult
+from api.notifications.providers import NOT_CONFIGURED, SendResult
 
 
 def _trigger(register, check_in, add_contact, clock, run_worker, **contact):
@@ -89,8 +89,8 @@ def test_provider_exception_is_recorded_as_failure(db, register, check_in, add_c
 
 
 def test_pending_notifications_cancelled_when_user_checks_in(db, settings, register, check_in, add_contact, clock, email):
-    from deadman.engine import process_expired
-    from deadman.geocoding import NullGeocoder
+    from api.engine import process_expired
+    from api.geocoding import NullGeocoder
 
     account = register()
     add_contact(account)

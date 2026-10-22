@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from deadman.notifications.messages import (
+from api.notifications.messages import (
     EmergencyMessage,
     alert_test_text,
     email_html,
@@ -8,7 +8,7 @@ from deadman.notifications.messages import (
     email_text,
     short_text,
 )
-from deadman.timeutil import format_human
+from api.timeutil import format_human
 from tests.conftest import START
 
 

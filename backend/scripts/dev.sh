@@ -411,14 +411,14 @@ cmd_run() {
   fi
 
   log "api      -> http://$API_HOST:$API_PORT (logs: $LOGS/api.log)"
-  (cd "$CODE" && exec "$VENV/bin/uvicorn" app:app --reload --host "$API_HOST" --port "$API_PORT") \
+  (cd "$CODE" && exec "$VENV/bin/uvicorn" api.api.app:app --reload --host "$API_HOST" --port "$API_PORT") \
     > "$LOGS/api.log" 2>&1 &
   pids+=($!); names+=(api)
 
   # Without the worker nothing is ever alerted: the API only records check-ins, and
   # it is the worker that notices a missed one and dispatches the messages.
   log "worker   -> $LOGS/worker.log"
-  (cd "$CODE" && exec "$VENV/bin/python" -m deadman.worker) > "$LOGS/worker.log" 2>&1 &
+  (cd "$CODE" && exec "$VENV/bin/python" -m api.worker) > "$LOGS/worker.log" 2>&1 &
   pids+=($!); names+=(worker)
 
   log "running. Ctrl-C stops all three."
