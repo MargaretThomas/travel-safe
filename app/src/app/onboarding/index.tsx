@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
-
-import { WelcomeScreen } from '@/components/ui/welcome';
+import { WelcomeScreenV4 } from '@/components/ui/blocks/welcome-v4';
 import { strings } from '@/i18n/strings';
 
 const START_ACTION = {
@@ -12,10 +11,10 @@ const START_ACTION = {
 
 export default function IntroScreen() {
   return (
-    <WelcomeScreen
-      testID="onboarding-index"
-      actions={[START_ACTION]}
-      onActionPress={() => router.push('/onboarding/name')}
+    <WelcomeScreenV4
+      onActionPress={() => {
+        router.push('/onboarding/name')
+      }}
     />
   );
 }

@@ -1,39 +1,32 @@
+import { Colors } from "@/constants/theme";
 import type { IWelcomeAction, IWelcomeLegalLink, IWelcomeToken } from "./types";
 
-export const DEFAULT_WORDMARK = "rooms";
+export const DEFAULT_WORDMARK = "Travel Safe";
 
 export const DEFAULT_HEADLINE: IWelcomeToken[] = [
-  { kind: "word", text: "chat" },
+  { kind: "word", text: "Safety" },
+  /*
   {
     kind: "avatar",
     background: "#dcd8f7",
     source:
       "https://i.pinimg.com/736x/99/f3/5a/99f35a4179e659ce63250408e68c8cf6.jpg",
   },
-  { kind: "word", text: "rooms" },
-  { kind: "word", text: "with", muted: true },
-  { kind: "word", text: "the", muted: true },
-  { kind: "word", text: "most" },
-  { kind: "word", text: "valuable" },
-  {
-    kind: "avatar",
-    background: "#cfe6d2",
-    source:
-      "https://i.pinimg.com/736x/a1/32/82/a1328236ea7ad0c37b09c595bfb5c0cb.jpg",
-  },
+  */
+  { kind: "word", text: "check-ins" },
+  { kind: "word", text: "for", muted: true },
+  { kind: "word", text: "people", muted: true },
+  { kind: "word", text: "who" },
+  { kind: "word", text: "travel" },
+  { kind: "word", text: "alone" },
 ];
 
 export const DEFAULT_ACTIONS: IWelcomeAction[] = [
   {
     key: "apple",
-    label: "Sign up with Apple",
+    label: "Get Started",
     icon: "apple",
     variant: "primary",
-  },
-  {
-    key: "login",
-    label: "I have an account",
-    variant: "secondary",
   },
 ];
 
@@ -65,7 +58,7 @@ export const WORDMARK_SIZE = 28;
 
 export const COLORS = {
   screen: "#ffffff",
-  wordmark: "#111111",
+  wordmark: Colors.light.brand,
   headline: "#111111",
   headlineMuted: "#a8a8a8",
   primary: "#2b2b2b",

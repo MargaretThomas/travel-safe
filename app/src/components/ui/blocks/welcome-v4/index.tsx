@@ -35,6 +35,7 @@ import type {
   IWelcomeScreenV4,
   IWelcomeToken,
 } from "./types";
+import { Colors } from "@/constants/theme";
 
 const AppleGlyph: React.FC<IGlyph> = ({
   size = ICON_SIZE,
@@ -52,85 +53,84 @@ const ICONS: Record<NonNullable<IWelcomeAction["icon"]>, React.FC<IGlyph>> = {
   apple: AppleGlyph,
 };
 
-const Headline: React.FC<{ tokens: IWelcomeToken[] }> = memo(({ tokens }) => (
-  <View style={styles.headline}>
-    {tokens.map((token, index) =>
-      token.kind === "word" ? (
-        <Text
-          key={`${token.text}-${index}`}
-          style={[styles.word, token.muted ? styles.wordMuted : null]}
-        >
-          {token.text}
-        </Text>
-      ) : (
-        <View
-          key={`avatar-${index}`}
-          style={[styles.avatar, { backgroundColor: token.background }]}
-        >
-          {token.source ? (
-            <Image
-              source={{ uri: token.source }}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={styles.avatarEmoji}>{token.emoji}</Text>
-          )}
-        </View>
-      ),
-    )}
-  </View>
-));
+const Headline = memo(function Headline({ tokens }: { tokens: IWelcomeToken[] }) {
+  return (
+    <View style={styles.headline}>
+      {tokens.map((token, index) =>
+        token.kind === "word" ? (
+          <Text
+            key={`${token.text}-${index}`}
+            style={[styles.word, token.muted ? styles.wordMuted : null]}
+          >
+            {token.text}
+          </Text>
+        ) : (
+          <View
+            key={`avatar-${index}`}
+            style={[styles.avatar, { backgroundColor: token.background }]}
+          >
+            {token.source ? (
+              <Image
+                source={{ uri: token.source }}
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={styles.avatarEmoji}>{token.emoji}</Text>
+            )}
+          </View>
+        ),
+      )}
+    </View>
+  );
+});
 
-const ActionRow: React.FC<IWelcomeActionRow> = memo(
-  ({ action, onPress }: IWelcomeActionRow) => {
-    const [pressed, setPressed] = useState<boolean>(false);
-    const primary = action.variant !== "secondary";
-    const Icon = action.icon ? ICONS[action.icon] : null;
+const ActionRow = memo(function ActionRow({ action, onPress }: IWelcomeActionRow) {
+  const [pressed, setPressed] = useState<boolean>(false);
+  const primary = action.variant !== "secondary";
+  // const Icon = action.icon ? ICONS[action.icon] : null;
 
-    const handlePress = useCallback(() => onPress?.(action), [action, onPress]);
-    const handlePressIn = useCallback(() => setPressed(true), []);
-    const handlePressOut = useCallback(() => setPressed(false), []);
+  const handlePress = useCallback(() => onPress?.(action), [action, onPress]);
+  const handlePressIn = useCallback(() => setPressed(true), []);
+  const handlePressOut = useCallback(() => setPressed(false), []);
 
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={action.label}
-        onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={action.label}
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[
+        styles.action,
+        primary ? styles.actionPrimary : styles.actionSecondary,
+        pressed
+          ? primary
+            ? styles.actionPrimaryPressed
+            : styles.actionSecondaryPressed
+          : null,
+      ]}
+    >
+      <Text
         style={[
-          styles.action,
-          primary ? styles.actionPrimary : styles.actionSecondary,
-          pressed
-            ? primary
-              ? styles.actionPrimaryPressed
-              : styles.actionSecondaryPressed
-            : null,
+          styles.actionLabel,
+          primary ? styles.actionLabelPrimary : styles.actionLabelSecondary,
         ]}
+        numberOfLines={1}
       >
-        {Icon ? <Icon size={ICON_SIZE} /> : null}
-        <Text
-          style={[
-            styles.actionLabel,
-            primary ? styles.actionLabelPrimary : styles.actionLabelSecondary,
-          ]}
-          numberOfLines={1}
-        >
-          {action.label}
-        </Text>
-      </Pressable>
-    );
-  },
-);
+        {action.label}
+      </Text>
+    </Pressable>
+  );
+});
 
 const WelcomeScreenV4: React.FC<IWelcomeScreenV4> = ({
   wordmark = DEFAULT_WORDMARK,
   headline = DEFAULT_HEADLINE,
   actions = DEFAULT_ACTIONS,
-  legalPrefix = DEFAULT_LEGAL_PREFIX,
-  legalLinks = DEFAULT_LEGAL_LINKS,
-  legalSuffix = DEFAULT_LEGAL_SUFFIX,
+  // legalPrefix = DEFAULT_LEGAL_PREFIX,
+  // legalLinks = DEFAULT_LEGAL_LINKS,
+  // legalSuffix = DEFAULT_LEGAL_SUFFIX,
   logo,
   style,
   onActionPress,
@@ -172,23 +172,6 @@ const WelcomeScreenV4: React.FC<IWelcomeScreenV4> = ({
             />
           ))}
         </View>
-
-        <Text style={styles.legal}>
-          {legalPrefix}{" "}
-          {legalLinks.map((link, index) => (
-            <Text key={link.key}>
-              <Text
-                accessibilityRole="link"
-                onPress={link.onPress}
-                style={styles.legalLink}
-              >
-                {link.label}
-              </Text>
-              {index < legalLinks.length - 1 ? ", " : " "}
-            </Text>
-          ))}
-          {legalSuffix}
-        </Text>
       </View>
     </View>
   );
@@ -231,7 +214,7 @@ const styles = StyleSheet.create({
     color: COLORS.headline,
   },
   wordMuted: {
-    color: COLORS.headlineMuted,
+    color: Colors.dark.brand ,
   },
   avatar: {
     width: AVATAR_SIZE,
@@ -263,7 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: ACTION_RADIUS,
   },
   actionPrimary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: Colors.dark.brand,
   },
   actionPrimaryPressed: {
     backgroundColor: COLORS.primaryPressed,
