@@ -418,7 +418,7 @@ cmd_run() {
   # Without the worker nothing is ever alerted: the API only records check-ins, and
   # it is the worker that notices a missed one and dispatches the messages.
   log "worker   -> $LOGS/worker.log"
-  (cd "$CODE" && exec "$VENV/bin/python" -m deadman.worker) > "$LOGS/worker.log" 2>&1 &
+  (cd "$CODE" && exec "$VENV/bin/python" -m api.worker) > "$LOGS/worker.log" 2>&1 &
   pids+=($!); names+=(worker)
 
   log "running. Ctrl-C stops all three."
