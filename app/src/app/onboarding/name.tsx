@@ -9,6 +9,7 @@ import { strings } from '@/i18n/strings';
 import { MAX_NAME_LENGTH } from '@/lib/contacts';
 import { registrationErrorMessage } from '@/lib/error-messages';
 import { useAppStore } from '@/store';
+import { toast } from "@/components/ui/molecules/Toast";
 
 export default function NameScreen() {
   const copy = strings.onboarding.name;
@@ -20,7 +21,9 @@ export default function NameScreen() {
 
   const submit = async () => {
     if (!name.trim()) {
-      setError(copy.missing);
+      toast.error("Error", {
+        description: copy.missing,
+      })
       return;
     }
     setSaving(true);
@@ -30,7 +33,11 @@ export default function NameScreen() {
       await register(name);
       router.push('/onboarding/permissions');
     } catch (err) {
-      setError(registrationErrorMessage(err));
+      // setError(registrationErrorMessage(err));
+      //
+      toast.error("Error", {
+        description: err
+      })
     } finally {
       setSaving(false);
     }

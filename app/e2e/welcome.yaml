@@ -1,0 +1,36 @@
+appId: makers.travel.safe
+---
+# Welcome: the branded intro screen shows the Travel Safe wordmark, the
+# headline, the three trust points and the fine print, and the call to action
+# starts onboarding.
+
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+- assertVisible:
+    id: "onboarding-index"
+- assertVisible:
+    id: "welcome-wordmark"
+- assertVisible: "Travel Safe"
+- assertVisible:
+    id: "welcome-eyebrow"
+- assertVisible:
+    id: "welcome-headline"
+- assertVisible: "A safety net"
+- assertVisible:
+    id: "welcome-feature-problem"
+- assertVisible:
+    id: "welcome-feature-solution"
+- assertVisible:
+    id: "welcome-feature-control"
+- assertVisible:
+    id: "welcome-legal"
+- assertVisible:
+    id: "onboarding-start"
+
+# The call to action moves on to the name step.
+- tapOn:
+    id: "onboarding-start"
+- assertVisible:
+    id: "onboarding-name"

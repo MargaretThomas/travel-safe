@@ -1,5 +1,6 @@
 import { plural } from '@/i18n/format';
 import { strings } from '@/i18n/strings';
+import { nearestValueIndex } from '@/lib/ruler';
 
 export const MINUTE_MS = 60_000;
 export const HOUR_MS = 60 * MINUTE_MS;
@@ -62,6 +63,21 @@ export function intervalDurationMs(minutes: number): number {
 
 export function intervalPreset(minutes: number): IntervalPreset | undefined {
   return INTERVAL_PRESETS.find((preset) => preset.minutes === minutes);
+}
+
+/** The preset intervals in order: the only values the ruler can select. */
+export const INTERVAL_PRESET_MINUTES: readonly number[] = INTERVAL_PRESETS.map(
+  (preset) => preset.minutes,
+);
+
+/**
+ * The preset closest to an interval. The ruler only ever selects whole presets,
+ * so an interval that arrives from somewhere else (the server, an older install)
+ * is snapped to the preset nearest to it.
+ */
+export function nearestIntervalPreset(minutes: number): IntervalPreset {
+  const index = nearestValueIndex(INTERVAL_PRESET_MINUTES, minutes);
+  return INTERVAL_PRESETS[index];
 }
 
 export function computeDeadline(lastCheckIn: Date, intervalMinutes: number): Date {
