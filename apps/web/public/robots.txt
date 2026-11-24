@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /emergency/
+
+Sitemap: https://travel-safe-web.seni-tembe.workers.dev/sitemap.xml

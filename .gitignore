@@ -1,49 +1,13 @@
-# OS clutter
-.DS_Store
-Thumbs.db
-Desktop.ini
-_frontend
-_backend
-_prompts
-# Editors
-.vscode/*
-!.vscode/extensions.json
-.idea/
-*.swp
-*.swo
-*~
-keys
-assets
-*.zip
-# Root secrets
-/.env
-/.env.local
-/.env.*.local
-/*.pem
-/*.key
-
-# Logs
+node_modules/
+dist/
+build/
+.wrangler/
+.dev.vars
+.env
+.env.local
+.env.*.local
+coverage/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Accidental root-level installs and build output
-/node_modules/
-/dist/
-/build/
-/__pycache__/
-/*.pyc
-/.venv/
-/venv/
-
-# Hosting and tooling state
-/.expo/
-/.expo-shared/
-/.supabase/
-/.render-buildpacks/
-
-# Temporary and cache files
-*.tmp
-.cache/
+.DS_Store
+api/api
+api/app.wasm

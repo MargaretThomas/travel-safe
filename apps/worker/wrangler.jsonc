@@ -1,0 +1,26 @@
+{
+  "name": "travel-safe-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "travel-safe-db",
+      "database_id": "ff1f2028-37a3-4930-a13f-fc2246c111b1",
+      "migrations_dir": "../../db/migrations"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "WEB_BASE_URL": "https://travel-safe-web.seni-tembe.workers.dev",
+    "EMAIL_FROM": "Travel Safe <alerts@travel-safe.app>",
+    "EMAIL_REPLY_TO": "support@travel-safe.app"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

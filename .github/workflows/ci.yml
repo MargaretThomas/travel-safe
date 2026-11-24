@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - cloud-flare-migration
+  pull_request:
+
+jobs:
+  test:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Type-check the web app
+        run: npm --workspace @travel-safe/web run typecheck
+
+      - name: Type-check the worker
+        run: npm --workspace @travel-safe/worker run typecheck
+
+      - name: Build the Go API to WebAssembly
+        run: npm --workspace @travel-safe/api run typecheck
+
+      - name: Build the web app
+        run: npm run build:web

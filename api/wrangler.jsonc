@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "travel-safe-api",
+  "main": "./build/worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "build": {
+    "command": "npm run build"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "travel-safe-db",
+      "database_id": "ff1f2028-37a3-4930-a13f-fc2246c111b1",
+      "migrations_dir": "../db/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "travel-safe-media"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "WEB_ORIGIN": "https://travel-safe-web.seni-tembe.workers.dev",
+    "EMERGENCY_BASE_URL": "https://travel-safe-web.seni-tembe.workers.dev"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

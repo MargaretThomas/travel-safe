@@ -1,0 +1,43 @@
+# Travel Safe
+
+> Travel Safe is a personal safety check-in service. You check in on a schedule you choose. If you miss a check-in, a dead-man switch warns you, then notifies your emergency contacts with a private page containing your last 7 days of GPS locations, and any SOS video, audio, image or text message you sent. Built on Cloudflare Workers, D1 and R2.
+
+## Product
+
+- Landing page: https://travel-safe-web.seni-tembe.workers.dev/
+- API documentation: https://travel-safe-web.seni-tembe.workers.dev/docs
+- Support: https://travel-safe-web.seni-tembe.workers.dev/support
+- Source code: https://github.com/mindsgn/travel-safe
+
+## What it does
+
+- Users create an account with a name (required), email, phone and check-in interval.
+- `POST /v1/check-ins` resets the dead-man switch. `POST /v1/locations` stores GPS points retained for 7 days.
+- Emergency contacts require a name plus an email or phone number. Each contact gets their own revocable private link.
+- `POST /v1/sos` accepts `image/*`, `video/*`, `audio/*` up to 25 MB, or a JSON/text message. SOS creates an active emergency.
+- A scheduled Cloudflare Worker runs every hour. It warns the user when the check-in deadline passes, triggers the dead-man switch after the grace period, and emails the user and contacts with styled alerts.
+- `GET /v1/emergency/:token` is the public, token-scoped emergency payload used by the private page. `GET /v1/emergency/:token/media/:id` streams SOS media from R2.
+- Links can be revoked individually with `POST /v1/contacts/:id/revoke`, or rotated with `POST /v1/emergency-link/rotate`.
+
+## Stack
+
+- API: Go compiled to WebAssembly, running on Cloudflare Workers. D1 for relational data, R2 for SOS media.
+- Scheduler: TypeScript Cloudflare Worker with an hourly cron trigger (`0 * * * *`).
+- Web: React, Vite, Tailwind CSS, shadcn/ui, ReactBits, i18next. Deployed on Cloudflare Workers static assets.
+
+## API quickstart
+
+```bash
+curl -X POST https://travel-safe-api.seni-tembe.workers.dev/v1/users \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Thandi Mokoena","email":"thandi@example.com","check_in_interval_minutes":1440}'
+
+curl -X POST https://travel-safe-api.seni-tembe.workers.dev/v1/check-ins \
+  -H "Authorization: Bearer $API_KEY"
+```
+
+API index: https://travel-safe-api.seni-tembe.workers.dev/
+
+## Safety
+
+Travel Safe is a safety net, not an emergency service. It does not contact police, ambulance or fire services. If someone is in immediate danger, call local emergency services.

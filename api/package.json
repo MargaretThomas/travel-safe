@@ -1,0 +1,15 @@
+{
+  "name": "@travel-safe/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "go run github.com/syumai/workers-go/cmd/workers-assets-gen -mode=go && GOOS=js GOARCH=wasm go build -o ./build/app.wasm .",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "go test ./internal/validate ./internal/media ./internal/id ./internal/timeutil ./internal/model",
+    "typecheck": "GOOS=js GOARCH=wasm go build -o /tmp/travel-safe-api.wasm ."
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
+  }
+}

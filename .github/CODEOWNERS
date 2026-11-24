@@ -1,3 +1,4 @@
 * @SXNGE4444 @zowhere @mindsgn @MargaretThomas
-/backend/** @SXNGE4444 @zowhere
-/frontend/** @mindsgn @MargaretThomas
+/api/** @SXNGE4444 @zowhere
+/apps/** @mindsgn @MargaretThomas
+/db/** @SXNGE4444 @zowhere

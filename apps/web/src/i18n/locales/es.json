@@ -1,0 +1,268 @@
+{
+  "brand": {
+    "name": "Travel Safe",
+    "tagline": "Una red de seguridad que se preocupa por ti."
+  },
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Intentar de nuevo",
+    "backHome": "Volver a Travel Safe",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "openInMaps": "Abrir en Mapas",
+    "language": "Idioma",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "close": "Cerrar",
+    "menu": "Menú",
+    "viewDocs": "Ver la documentación",
+    "github": "GitHub",
+    "english": "English",
+    "spanish": "Español",
+    "french": "Français",
+    "readMore": "Leer más"
+  },
+  "nav": {
+    "howItWorks": "Cómo funciona",
+    "docs": "Documentación",
+    "support": "Soporte",
+    "getStarted": "Empezar",
+    "home": "Inicio"
+  },
+  "hero": {
+    "eyebrow": "Registros de seguridad para quienes viajan solos",
+    "titleLead": "Una red de seguridad",
+    "titleTail": "que se preocupa por ti.",
+    "description": "Registra tu estado con un toque, en el horario que elijas. Si no lo haces, las personas de tu confianza reciben una página privada con tu última ubicación conocida, tus archivos SOS y los últimos 7 días de tu ruta.",
+    "primary": "Explorar la API",
+    "secondary": "Ver cómo funciona",
+    "note": "Sin rastreo. Sin anuncios. Tú decides quién se entera.",
+    "preview": {
+      "badge": "Vista de emergencia",
+      "status": "Última ubicación conocida",
+      "name": "Thandi M.",
+      "updated": "Actualizada hace 4 minutos",
+      "accuracy": "Precisión de ±12 m",
+      "media": "Vídeo SOS · 0:14",
+      "location": "Sea Point, Ciudad del Cabo",
+      "trail": "Ruta de 7 días",
+      "active": "Activa"
+    },
+    "stats": [
+      { "value": 1, "suffix": " toque", "label": "para registrarte" },
+      { "value": 7, "suffix": " días", "label": "de historial de ubicación" },
+      { "value": 60, "suffix": " min", "label": "de margen antes de avisar" },
+      { "value": 0, "suffix": "", "label": "rastreadores o anuncios" }
+    ]
+  },
+  "trust": {
+    "edge": "Funciona en la red de Cloudflare",
+    "storage": "Almacenamiento D1 + R2",
+    "open": "API HTTP abierta",
+    "private": "Enlaces privados revocables"
+  },
+  "features": {
+    "eyebrow": "Qué hace",
+    "title": "Diseñado para el momento en que nadie responde.",
+    "description": "La mayoría de las apps de seguridad terminan en un botón de pánico. Travel Safe sigue funcionando cuando tu teléfono está apagado, sin batería o fuera de tu alcance.",
+    "items": [
+      {
+        "title": "Registros con un toque",
+        "body": "Elige un ritmo que encaje con tu día, desde 15 minutos hasta 30 días. Cada registro reinicia el reloj y cierra cualquier emergencia activa."
+      },
+      {
+        "title": "Un interruptor que vive en el servidor",
+        "body": "El worker horario vigila tu plazo aunque tu teléfono esté apagado. Primero te avisa. Después del margen, tus contactos reciben la página privada."
+      },
+      {
+        "title": "SOS con vídeo, audio, imagen o mensaje",
+        "body": "Envía hasta 25 MB de archivos o un mensaje breve. Todo se guarda en R2 y aparece en la misma página privada que tu ubicación."
+      },
+      {
+        "title": "Páginas privadas y revocables",
+        "body": "Cada contacto recibe un enlace único. Revoca uno sin afectar a los demás, o cambia tu propio enlace y anula todas las copias anteriores al instante."
+      }
+    ]
+  },
+  "how": {
+    "eyebrow": "Cómo funciona",
+    "title": "Tres pasos. Sin panel que vigilar.",
+    "steps": [
+      {
+        "title": "Regístrate",
+        "body": "Una llamada a la API, o un toque en la app que construyas encima. Tu ubicación se guarda 7 días y tu plazo avanza."
+      },
+      {
+        "title": "Pierde el plazo",
+        "body": "Al vencer el plazo, el worker te avisa por correo. Tras el margen, activa el interruptor y notifica a tus contactos de emergencia."
+      },
+      {
+        "title": "Ellos abren la página",
+        "body": "Una página privada sin inicio de sesión muestra tu última ubicación, la ruta de 7 días y tus archivos SOS. Tú puedes revocar el acceso cuando quieras."
+      }
+    ]
+  },
+  "developer": {
+    "eyebrow": "Pensado para desarrolladores",
+    "title": "Una API para construir un producto de seguridad.",
+    "body": "La API en Go corre en Cloudflare Workers, guarda datos estructurados en D1 y archivos en R2. Un worker separado en TypeScript controla el interruptor cada hora. Sin servidores que parchear ni colas que mantener.",
+    "bullets": [
+      "API en Go compilada a WebAssembly",
+      "D1 con retención de ubicación de 7 días",
+      "R2 para vídeo, audio e imágenes SOS",
+      "Interruptor horario con correos de alerta con estilo"
+    ],
+    "cta": "Leer la documentación",
+    "endpointTitle": "Endpoints principales",
+    "endpoints": [
+      { "method": "POST", "path": "/v1/users", "label": "Crear un usuario" },
+      { "method": "POST", "path": "/v1/check-ins", "label": "Reiniciar el interruptor" },
+      { "method": "POST", "path": "/v1/locations", "label": "Guardar GPS" },
+      { "method": "POST", "path": "/v1/sos", "label": "Enviar archivos SOS" },
+      { "method": "GET", "path": "/v1/emergency/:token", "label": "Datos de la página privada" }
+    ]
+  },
+  "faq": {
+    "eyebrow": "Preguntas frecuentes",
+    "title": "Las preguntas que importan.",
+    "items": [
+      {
+        "q": "¿Travel Safe es un servicio de emergencia?",
+        "a": "No. Avisa a las personas que tú eliges. No contacta con policía, ambulancia ni bomberos y no puede garantizar que alguien vea la alerta. Si alguien está en peligro inmediato, llama a los servicios de emergencia locales."
+      },
+      {
+        "q": "¿Qué pasa si mi teléfono está apagado?",
+        "a": "El interruptor vive en la red de Cloudflare, no en tu teléfono. El worker horario compara tu último registro con tu plazo y puede activar la alerta aunque tu dispositivo esté desconectado."
+      },
+      {
+        "q": "¿Cuánto tiempo se guardan las ubicaciones?",
+        "a": "Los puntos de ubicación se guardan 7 días y luego el worker horario los elimina. La página privada solo consulta esa ventana de 7 días."
+      },
+      {
+        "q": "¿Un contacto puede conservar el enlace para siempre?",
+        "a": "Solo hasta que lo revoques. Cada contacto tiene su propio token. Revocar uno deja los demás activos, y cambiar tu enlace de propietario invalida todas las copias anteriores."
+      },
+      {
+        "q": "¿Cómo lo ejecuto yo mismo?",
+        "a": "El repositorio incluye la API en Go, el worker en TypeScript, las migraciones de D1 y el sitio en React. Necesitas una cuenta de Cloudflare, una base D1, un bucket R2 y un proveedor de correo."
+      }
+    ]
+  },
+  "cta": {
+    "eyebrow": "Empieza pequeño",
+    "title": "Construye tu propia red de seguridad.",
+    "body": "Empieza con un usuario, un intervalo y un contacto de confianza. Añade archivos SOS y páginas privadas cuando los necesites.",
+    "primary": "Leer la documentación",
+    "secondary": "Obtener soporte"
+  },
+  "footer": {
+    "tagline": "Una red de seguridad, no un servicio de emergencia.",
+    "product": "Producto",
+    "developers": "Desarrolladores",
+    "legal": "Legal",
+    "company": "Proyecto",
+    "howItWorks": "Cómo funciona",
+    "docs": "Documentación",
+    "support": "Soporte",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "github": "GitHub",
+    "llms": "llms.txt",
+    "copyright": "© {{year}} The Makers. Hecho con cuidado en Ciudad del Cabo.",
+    "disclaimer": "Travel Safe avisa a las personas que tú eliges. No contacta con los servicios de emergencia."
+  },
+  "support": {
+    "eyebrow": "Soporte",
+    "title": "¿Cómo podemos ayudarte?",
+    "description": "Travel Safe es un proyecto abierto. Reporta un error, pide una función o lee la documentación antes de desplegar tu propia instancia.",
+    "issuesTitle": "Abrir un issue",
+    "issuesBody": "Los errores, las solicitudes de funciones y las correcciones de documentación viven en el repositorio público. Incluye la versión de la API, lo que esperabas y lo que ocurrió.",
+    "issuesCta": "Abrir issues en GitHub",
+    "securityTitle": "Reportar un problema de seguridad",
+    "securityBody": "No abras un issue público para una vulnerabilidad. Usa el flujo privado de avisos de seguridad de GitHub para que podamos corregirla antes de divulgarla.",
+    "securityCta": "Aviso de seguridad privado",
+    "statusTitle": "Estado del servicio",
+    "statusBody": "La API expone un endpoint de salud con su versión y la hora UTC actual. El planificador también expone un endpoint de salud.",
+    "statusApi": "Comprobar la API",
+    "statusWorker": "Comprobar el worker",
+    "docsTitle": "Lee primero la documentación",
+    "docsBody": "La documentación cubre autenticación, registros, contactos, subidas SOS, páginas de emergencia, el worker horario y el autoalojamiento.",
+    "docsCta": "Abrir la documentación",
+    "faqTitle": "Preguntas comunes",
+    "faq": [
+      {
+        "q": "Un enlace de emergencia dice que no es válido.",
+        "a": "El propietario cambió su enlace o revocó a ese contacto. Pídele el enlace actual."
+      },
+      {
+        "q": "El worker no envía correos.",
+        "a": "Configura RESEND_API_KEY o un binding send_email de Cloudflare, y verifica que EMAIL_FROM pertenezca a un dominio de envío dado de alta. Sin proveedor, el worker registra la alerta y reintenta."
+      },
+      {
+        "q": "¿Cómo elimino una cuenta?",
+        "a": "Llama a DELETE /v1/me con la clave API de la cuenta. Se eliminan el usuario, los contactos, las ubicaciones, los registros, los SOS y los eventos de emergencia."
+      }
+    ]
+  },
+  "emergency": {
+    "badge": "Vista de emergencia",
+    "viewingAsOwner": "Vista privada del propietario",
+    "viewingAsContact": "Estás viendo esto como contacto de emergencia",
+    "active": "Emergencia activa",
+    "inactive": "No hay emergencia activa",
+    "reasonDeadman": "Se perdió un registro.",
+    "reasonSos": "Se envió un SOS.",
+    "since": "Desde {{when}}",
+    "lastKnown": "Última ubicación conocida",
+    "lastKnownAt": "Actualizada {{when}}",
+    "accuracy": "Precisión de ±{{metres}} m",
+    "coordinates": "{{lat}}, {{lng}}",
+    "trail": "Últimos 7 días",
+    "trailEmpty": "No se compartió ninguna ubicación en los últimos 7 días.",
+    "trailCount": "{{count}} puntos guardados 7 días y luego eliminados.",
+    "sos": "Archivos SOS",
+    "sosEmpty": "No se ha enviado ningún vídeo, audio, imagen o mensaje SOS.",
+    "video": "Vídeo",
+    "audio": "Audio",
+    "image": "Imagen",
+    "message": "Mensaje",
+    "sentAt": "Enviado {{when}}",
+    "supportTitle": "Qué hacer ahora",
+    "supportBody": "Intenta contactar directamente con la persona. Si crees que alguien está en peligro inmediato, llama a los servicios de emergencia locales. Esta página no está monitorizada las 24 horas.",
+    "invalidTitle": "Este enlace no es válido",
+    "invalidBody": "Puede que el propietario lo haya revocado o que nunca haya existido. Pídele un enlace actual.",
+    "loading": "Abriendo la página de emergencia…",
+    "footer": "Travel Safe solo comparte lo que el propietario decidió compartir. El propietario puede revocar este enlace en cualquier momento.",
+    "updated": "Página generada {{when}}",
+    "mapAlt": "Mapa aproximado de las ubicaciones de los últimos 7 días"
+  },
+  "notFound": {
+    "eyebrow": "404",
+    "title": "Esta página se perdió.",
+    "body": "El enlace está roto o la página se movió. Los enlaces del visor de emergencia son privados y tienen el formato /emergency/<token>.",
+    "cta": "Volver a Travel Safe"
+  },
+  "seo": {
+    "home": {
+      "title": "Travel Safe — una red de seguridad que se preocupa por ti",
+      "description": "Regístrate cuando quieras. Si no lo haces, tus personas de confianza reciben una página privada con tu última ubicación, la ruta de 7 días y vídeo, audio o mensajes SOS."
+    },
+    "docs": {
+      "title": "Documentación de la API y el worker — Travel Safe",
+      "description": "Construye sobre la API Go de Travel Safe en Cloudflare Workers, D1 y R2. Registros, contactos, GPS, archivos SOS, páginas privadas y el interruptor horario."
+    },
+    "support": {
+      "title": "Soporte — Travel Safe",
+      "description": "Obtén ayuda con Travel Safe, reporta un error, pide una función o informa de un problema de seguridad."
+    },
+    "privacy": {
+      "title": "Política de privacidad — Travel Safe",
+      "description": "Qué guarda Travel Safe, durante cuánto tiempo, quién puede verlo y cómo revocar el acceso de emergencia."
+    },
+    "terms": {
+      "title": "Términos de uso — Travel Safe",
+      "description": "Los términos que rigen la API, el worker y el visor de emergencia de Travel Safe."
+    }
+  }
+}

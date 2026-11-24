@@ -1,0 +1,268 @@
+{
+  "brand": {
+    "name": "Travel Safe",
+    "tagline": "A safety net that checks on you."
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "backHome": "Back to Travel Safe",
+    "copy": "Copy",
+    "copied": "Copied",
+    "openInMaps": "Open in Maps",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "close": "Close",
+    "menu": "Menu",
+    "viewDocs": "View the docs",
+    "github": "GitHub",
+    "english": "English",
+    "spanish": "Español",
+    "french": "Français",
+    "readMore": "Read more"
+  },
+  "nav": {
+    "howItWorks": "How it works",
+    "docs": "Docs",
+    "support": "Support",
+    "getStarted": "Get started",
+    "home": "Home"
+  },
+  "hero": {
+    "eyebrow": "Safety check-ins for people who travel alone",
+    "titleLead": "A safety net",
+    "titleTail": "that checks on you.",
+    "description": "Check in with one tap on a schedule you choose. Miss it, and the people you trust get a private page with your last known location, SOS media and the last 7 days of your route.",
+    "primary": "Explore the API",
+    "secondary": "See how it works",
+    "note": "No tracking. No ads. You decide who is told.",
+    "preview": {
+      "badge": "Emergency view",
+      "status": "Last known location",
+      "name": "Thandi M.",
+      "updated": "Updated 4 minutes ago",
+      "accuracy": "±12 m accuracy",
+      "media": "SOS video · 0:14",
+      "location": "Sea Point, Cape Town",
+      "trail": "7-day trail",
+      "active": "Active"
+    },
+    "stats": [
+      { "value": 1, "suffix": " tap", "label": "to check in" },
+      { "value": 7, "suffix": " days", "label": "of location history" },
+      { "value": 60, "suffix": " min", "label": "grace before an alert" },
+      { "value": 0, "suffix": "", "label": "trackers or ads" }
+    ]
+  },
+  "trust": {
+    "edge": "Runs on Cloudflare's edge",
+    "storage": "D1 + R2 storage",
+    "open": "Open HTTP API",
+    "private": "Revocable private links"
+  },
+  "features": {
+    "eyebrow": "What it does",
+    "title": "Built for the moment nobody picks up.",
+    "description": "Most safety apps stop at a panic button. Travel Safe keeps working when your phone is off, your battery is gone, or you simply cannot reach it.",
+    "items": [
+      {
+        "title": "One-tap check-ins",
+        "body": "Set a rhythm that fits your day, from 15 minutes to 30 days. Every check-in resets the clock and clears any active emergency."
+      },
+      {
+        "title": "A dead-man switch that runs server-side",
+        "body": "The hourly worker watches your deadline even when your phone is off. You get a warning first. After the grace period, your contacts get the private page."
+      },
+      {
+        "title": "SOS video, audio, images or a message",
+        "body": "Send up to 25 MB of media or a short custom message. Everything is stored in R2 and shown on the same private page as your location."
+      },
+      {
+        "title": "Private, revocable pages",
+        "body": "Every contact gets a unique link. Revoke one contact without touching the others, or rotate your own link and kill every old copy instantly."
+      }
+    ]
+  },
+  "how": {
+    "eyebrow": "How it works",
+    "title": "Three steps. No dashboard to babysit.",
+    "steps": [
+      {
+        "title": "Check in",
+        "body": "One API call, or one tap in the app you build on top of it. Your location is saved for 7 days and your deadline moves forward."
+      },
+      {
+        "title": "Miss the deadline",
+        "body": "At the deadline the worker warns you by email. After the grace period it triggers the dead-man switch and notifies your emergency contacts."
+      },
+      {
+        "title": "They open the page",
+        "body": "A private, no-login page shows your latest location, a 7-day trail and any SOS media. The owner can revoke access at any time."
+      }
+    ]
+  },
+  "developer": {
+    "eyebrow": "Developer first",
+    "title": "An API you can build a safety product on.",
+    "body": "The Go API runs on Cloudflare Workers, stores structured data in D1 and media in R2. A separate TypeScript worker owns the hourly switch. No servers to patch, no queues to run.",
+    "bullets": [
+      "Go API compiled to WebAssembly",
+      "D1 relational storage with 7-day location retention",
+      "R2 for SOS video, audio and images",
+      "Hourly dead-man switch with styled email alerts"
+    ],
+    "cta": "Read the API docs",
+    "endpointTitle": "Core endpoints",
+    "endpoints": [
+      { "method": "POST", "path": "/v1/users", "label": "Create a user" },
+      { "method": "POST", "path": "/v1/check-ins", "label": "Reset the switch" },
+      { "method": "POST", "path": "/v1/locations", "label": "Save GPS" },
+      { "method": "POST", "path": "/v1/sos", "label": "Send SOS media" },
+      { "method": "GET", "path": "/v1/emergency/:token", "label": "Private page data" }
+    ]
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "The questions that matter.",
+    "items": [
+      {
+        "q": "Is Travel Safe an emergency service?",
+        "a": "No. It notifies the people you choose. It does not contact police, ambulance or fire services and cannot guarantee that anyone will see an alert. If someone is in immediate danger, call local emergency services."
+      },
+      {
+        "q": "What happens if my phone is off?",
+        "a": "The switch lives on Cloudflare's edge, not on your phone. The hourly worker checks your last check-in against your deadline and can trigger the alert even if your device is offline."
+      },
+      {
+        "q": "How long is location data kept?",
+        "a": "Location points are retained for 7 days and then deleted by the hourly worker. The private page only queries that 7-day window."
+      },
+      {
+        "q": "Can a contact keep the link forever?",
+        "a": "Only until you revoke it. Each contact has their own token. Revoking one contact leaves the others working, and rotating your owner link invalidates all previous copies."
+      },
+      {
+        "q": "How do I run it myself?",
+        "a": "The repository includes the Go API, the TypeScript worker, D1 migrations and the React site. You need a Cloudflare account, a D1 database, an R2 bucket and an email provider."
+      }
+    ]
+  },
+  "cta": {
+    "eyebrow": "Start small",
+    "title": "Build your own safety net.",
+    "body": "Start with one user, one interval and one trusted contact. Add SOS media and private pages when you need them.",
+    "primary": "Read the docs",
+    "secondary": "Get support"
+  },
+  "footer": {
+    "tagline": "A safety net, not an emergency service.",
+    "product": "Product",
+    "developers": "Developers",
+    "legal": "Legal",
+    "company": "Project",
+    "howItWorks": "How it works",
+    "docs": "Documentation",
+    "support": "Support",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "github": "GitHub",
+    "llms": "llms.txt",
+    "copyright": "© {{year}} The Makers. Built with care in Cape Town.",
+    "disclaimer": "Travel Safe notifies the people you choose. It does not contact emergency services."
+  },
+  "support": {
+    "eyebrow": "Support",
+    "title": "How can we help?",
+    "description": "Travel Safe is an open project. Report a bug, ask for a feature, or read the docs before you deploy your own instance.",
+    "issuesTitle": "Open an issue",
+    "issuesBody": "Bugs, feature requests and documentation fixes live in the public repository. Include your API version, what you expected, and what happened.",
+    "issuesCta": "Open GitHub Issues",
+    "securityTitle": "Report a security issue",
+    "securityBody": "Do not open a public issue for a vulnerability. Use GitHub's private security advisory flow so we can fix it before it is disclosed.",
+    "securityCta": "Private security advisory",
+    "statusTitle": "Service status",
+    "statusBody": "The API exposes a health endpoint with its version and current UTC time. The scheduler also exposes a health endpoint.",
+    "statusApi": "Check API health",
+    "statusWorker": "Check worker health",
+    "docsTitle": "Read the docs first",
+    "docsBody": "The documentation covers authentication, check-ins, contacts, SOS uploads, emergency pages, the hourly worker and self-hosting.",
+    "docsCta": "Open the documentation",
+    "faqTitle": "Common questions",
+    "faq": [
+      {
+        "q": "An emergency link says it is invalid.",
+        "a": "The account owner rotated their link or revoked that contact. Ask them for the current link."
+      },
+      {
+        "q": "The worker is not sending email.",
+        "a": "Set RESEND_API_KEY or configure a Cloudflare send_email binding, then verify EMAIL_FROM is on an onboarded sending domain. Without a provider the worker logs the alert and retries."
+      },
+      {
+        "q": "How do I delete an account?",
+        "a": "Call DELETE /v1/me with the account's API key. This removes the user, contacts, locations, check-ins, SOS records and emergency events."
+      }
+    ]
+  },
+  "emergency": {
+    "badge": "Emergency view",
+    "viewingAsOwner": "Private owner view",
+    "viewingAsContact": "You are viewing this as an emergency contact",
+    "active": "Emergency active",
+    "inactive": "No active emergency",
+    "reasonDeadman": "A check-in was missed.",
+    "reasonSos": "An SOS was sent.",
+    "since": "Since {{when}}",
+    "lastKnown": "Last known location",
+    "lastKnownAt": "Updated {{when}}",
+    "accuracy": "±{{metres}} m accuracy",
+    "coordinates": "{{lat}}, {{lng}}",
+    "trail": "Last 7 days",
+    "trailEmpty": "No location was shared in the last 7 days.",
+    "trailCount": "{{count}} points retained for 7 days, then deleted.",
+    "sos": "SOS media",
+    "sosEmpty": "No SOS video, audio, image or message has been sent.",
+    "video": "Video",
+    "audio": "Audio",
+    "image": "Image",
+    "message": "Message",
+    "sentAt": "Sent {{when}}",
+    "supportTitle": "What to do now",
+    "supportBody": "Try to reach them directly. If you believe someone is in immediate danger, contact local emergency services. This page is not monitored around the clock.",
+    "invalidTitle": "This link is not valid",
+    "invalidBody": "The link may have been revoked by the account owner, or it may never have existed. Ask the owner for a current link.",
+    "loading": "Opening the emergency page…",
+    "footer": "Travel Safe shares only what the account owner chose to share. The owner can revoke this link at any time.",
+    "updated": "Page generated {{when}}",
+    "mapAlt": "Approximate map of the last 7 days of locations"
+  },
+  "notFound": {
+    "eyebrow": "404",
+    "title": "This page wandered off.",
+    "body": "The link is broken or the page has moved. The emergency viewer links are private and look like /emergency/<token>.",
+    "cta": "Back to Travel Safe"
+  },
+  "seo": {
+    "home": {
+      "title": "Travel Safe — a safety net that checks on you",
+      "description": "Check in on your schedule. If you miss it, your trusted people get a private page with your last known location, 7-day trail and SOS video, audio or messages."
+    },
+    "docs": {
+      "title": "API & worker documentation — Travel Safe",
+      "description": "Build on the Travel Safe Go API on Cloudflare Workers, D1 and R2. Check-ins, contacts, GPS, SOS media, private emergency pages and the hourly dead-man switch."
+    },
+    "support": {
+      "title": "Support — Travel Safe",
+      "description": "Get help with Travel Safe, report a bug, request a feature or report a security issue."
+    },
+    "privacy": {
+      "title": "Privacy policy — Travel Safe",
+      "description": "What Travel Safe stores, how long it keeps it, who can see it, and how to revoke emergency access."
+    },
+    "terms": {
+      "title": "Terms of use — Travel Safe",
+      "description": "The terms that govern the Travel Safe API, worker and emergency viewer."
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "travel-safe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Travel Safe — check in. If you don't, we tell the people who matter.",
+  "workspaces": [
+    "apps/web",
+    "apps/worker",
+    "api"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @travel-safe/web run dev",
+    "dev:api": "npm --workspace @travel-safe/api run dev",
+    "dev:worker": "npm --workspace @travel-safe/worker run dev",
+    "build:web": "npm --workspace @travel-safe/web run build",
+    "build:api": "npm --workspace @travel-safe/api run build",
+    "test": "npm --workspace @travel-safe/web run test && npm --workspace @travel-safe/worker run test && npm --workspace @travel-safe/api run test",
+    "deploy:api": "npm --workspace @travel-safe/api run deploy",
+    "deploy:worker": "npm --workspace @travel-safe/worker run deploy",
+    "deploy:web": "npm --workspace @travel-safe/web run deploy"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f6f5c" />
+    <meta name="color-scheme" content="light dark" />
+
+    <title>Travel Safe — a safety net that checks on you</title>
+    <meta
+      name="description"
+      content="Travel Safe is a check-in safety net. Miss a check-in and the people you trust get a private page with your last 7 days of locations, SOS video, audio, images or a message. Built on Cloudflare D1 and R2."
+    />
+    <meta
+      name="keywords"
+      content="safety check-in app, dead man switch, solo travel safety, SOS alert, personal safety API, Cloudflare Workers, D1, R2"
+    />
+    <meta name="author" content="The Makers" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://travel-safe-web.seni-tembe.workers.dev/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Travel Safe" />
+    <meta property="og:title" content="Travel Safe — a safety net that checks on you" />
+    <meta
+      property="og:description"
+      content="One tap to check in. If you miss it, your trusted people get a private page with your last known location and SOS media."
+    />
+    <meta property="og:url" content="https://travel-safe-web.seni-tembe.workers.dev/" />
+    <meta property="og:image" content="https://travel-safe-web.seni-tembe.workers.dev/og.png" />
+    <meta property="og:image:alt" content="Travel Safe — a safety net that checks on you" />
+    <meta property="og:locale" content="en_ZA" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Travel Safe — a safety net that checks on you" />
+    <meta
+      name="twitter:description"
+      content="Check in on your schedule. If you miss it, the people you trust get your last location and SOS media."
+    />
+    <meta name="twitter:image" content="https://travel-safe-web.seni-tembe.workers.dev/og.png" />
+
+    <meta name="geo.region" content="ZA-WC" />
+    <meta name="geo.placename" content="Cape Town, South Africa" />
+    <meta name="geo.position" content="-33.9249;18.4241" />
+    <meta name="ICBM" content="-33.9249, 18.4241" />
+    <meta name="dc.language" content="en" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/logo-192.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="alternate" hreflang="x-default" href="https://travel-safe-web.seni-tembe.workers.dev/" />
+    <link rel="alternate" hreflang="en" href="https://travel-safe-web.seni-tembe.workers.dev/?lng=en" />
+    <link rel="alternate" hreflang="es" href="https://travel-safe-web.seni-tembe.workers.dev/?lng=es" />
+    <link rel="alternate" hreflang="fr" href="https://travel-safe-web.seni-tembe.workers.dev/?lng=fr" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://travel-safe-web.seni-tembe.workers.dev/#organization",
+            "name": "Travel Safe",
+            "alternateName": "The Makers",
+            "url": "https://travel-safe-web.seni-tembe.workers.dev/",
+            "logo": "https://travel-safe-web.seni-tembe.workers.dev/logo.svg",
+            "sameAs": ["https://github.com/mindsgn/travel-safe"],
+            "description": "A personal safety check-in service with a dead-man switch, SOS media and private emergency pages."
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://travel-safe-web.seni-tembe.workers.dev/#website",
+            "url": "https://travel-safe-web.seni-tembe.workers.dev/",
+            "name": "Travel Safe",
+            "publisher": { "@id": "https://travel-safe-web.seni-tembe.workers.dev/#organization" },
+            "inLanguage": ["en", "es", "fr"]
+          },
+          {
+            "@type": "WebApplication",
+            "name": "Travel Safe API",
+            "applicationCategory": "SafetyApplication",
+            "operatingSystem": "Web",
+            "url": "https://travel-safe-web.seni-tembe.workers.dev/docs",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "An HTTP API for scheduled check-ins, dead-man switch alerts, GPS history, SOS media and private emergency pages. Built on Cloudflare Workers, D1 and R2."
+          }
+        ]
+      }
+    </script>
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("travel-safe-theme");
+          var dark = stored
+            ? stored === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (error) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="max-width: 680px; margin: 64px auto; padding: 0 24px; font-family: system-ui">
+        <h1>Travel Safe</h1>
+        <p>
+          Travel Safe is a check-in safety net. Check in on your schedule, and if you miss one, your
+          trusted contacts receive a private page with your last known location and SOS media.
+        </p>
+        <p>
+          This site needs JavaScript. You can read the
+          <a href="/docs">API documentation</a>, <a href="/privacy">privacy policy</a> and
+          <a href="/terms">terms</a>.
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

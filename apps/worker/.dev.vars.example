@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local `wrangler dev`. Never commit real values.
+CRON_SECRET=local-dev-secret
+# RESEND_API_KEY=re_...
+# PUSH_WEBHOOK_URL=https://ntfy.sh/your-topic
